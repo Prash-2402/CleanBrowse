@@ -68,14 +68,6 @@
       <p id="details">URL unavailable.</p>
       <code id="url"></code>
     </main>
-    <script>
-      const params = new URLSearchParams(window.location.search);
-      const blockedUrl = params.get("url");
-
-      if (blockedUrl) {
-        document.getElementById("details").textContent = "Blocked address:";
-        document.getElementById("url").textContent = blockedUrl;
-      }
-    </script>
+    <script src="blocked.js"></script>
   </body>
 </html>

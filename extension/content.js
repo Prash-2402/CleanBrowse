@@ -141,6 +141,48 @@ function getReplacementFragment(text) {
   return fragment;
 }
 
+const analyzeQueue = [];
+let processingQueue = false;
+
+async function processAIQueue() {
+  if (processingQueue) return;
+  processingQueue = true;
+
+  while (analyzeQueue.length > 0) {
+    // Process 3 requests concurrently so it's snappy but safe
+    const batch = analyzeQueue.splice(0, 3);
+    
+    await Promise.all(batch.map((item) => new Promise((resolve) => {
+      // If the node got detached from the DOM during our wait, abandon it
+      if (!item.node.isConnected) {
+        return resolve();
+      }
+
+      chrome.runtime.sendMessage({ action: "analyzeText", text: item.text }, (response) => {
+        // If the AI flag is unsafe, apply the blur!
+        if (response && response.label === "unsafe" && item.node.isConnected) {
+          const span = document.createElement("span");
+          span.className = BLUR_CLASS;
+          span.title = `Filtered by CleanBrowse AI (Score: ${response.toxicity_score.toFixed(2)})`;
+          span.textContent = item.node.nodeValue;
+          item.node.replaceWith(span);
+          
+          // Secretly report this to the backend DB!
+          chrome.runtime.sendMessage({
+            action: "reportEvent",
+            eventType: "unsafe_content",
+            snippet: item.text.substring(0, 250), // keep it compact for DB
+            severity: "medium"
+          });
+        }
+        resolve();
+      });
+    })));
+  }
+
+  processingQueue = false;
+}
+
 function blurUnsafeWordsInElement(element) {
   if (!element || shouldSkipElement(element)) {
     return;
@@ -179,9 +221,20 @@ function blurUnsafeWordsInElement(element) {
   for (const textNode of textNodes) {
     const replacementFragment = getReplacementFragment(textNode.nodeValue);
 
+    // Fast Path Local Fallback: Blur the explicit words manually matched via javascript
     if (replacementFragment) {
       textNode.replaceWith(replacementFragment);
+    } else {
+      // If javascript was happy, queue it up for deep AI analysis!
+      const textToAnalyze = textNode.nodeValue.trim();
+      if (textToAnalyze.length > 10) { 
+        analyzeQueue.push({ node: textNode, text: textToAnalyze });
+      }
     }
+  }
+
+  if (analyzeQueue.length > 0) {
+    processAIQueue();
   }
 }
 

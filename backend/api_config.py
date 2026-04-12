@@ -21,9 +21,13 @@ VECTORIZER_PATH = Path(
 TRAINING_DATA_PATH = Path(
     os.getenv("CLEANBROWSE_TRAINING_DATA_PATH", str(DATA_DIR / "train.csv"))
 )
+DATABASE_PATH = Path(
+    os.getenv("CLEANBROWSE_DATABASE_PATH", str(BACKEND_DIR / "cleanbrowse.db"))
+)
 
 ROOT_ROUTE = "/"
 ANALYZE_TEXT_ROUTE = "/analyze-text"
+REPORT_EVENT_ROUTE = "/report-event"
 
 TEXT_FIELD = "text"
 TOXICITY_SCORE_FIELD = "toxicity_score"
@@ -35,3 +39,39 @@ UNSAFE_THRESHOLD = 0.5
 
 HOME_MESSAGE = "Toxicity API is running."
 HOME_EXAMPLE_TEXT = "You are amazing"
+
+UNSAFE_KEYWORDS = [
+    "sex", "sexvideo", "pornographic", "explicit content", "adult video", 
+    "adult site", "adult streaming", "adult subscription", "erotic video", 
+    "sex tape", "leaked video", "private video", "hidden cam", 
+    "sexvideo live", "sexvideo call", "sexvideo site", "sexvideo app", 
+    "sexvideo chat", "sexvideo room", "sexvideo live stream", "blowjob", 
+    "handjob", "gangbang", "threesome", "testes", "nude", "nudity", 
+    "porn", "xxx", "nsfw", "escort", "escort service", "call girl", 
+    "brothel", "massage parlor", "paid sex", "sex service", "fetish", 
+    "bdsm", "domination", "submissive", "erotic", "seduction", "making out", 
+    "foreplay", "climax", "orgasm", "penetration", "moaning", "arousal", 
+    "seducing", "striptease", "lap dance", "dirty talk", "intimate", 
+    "lust", "pleasure", "hookup", "one night stand", "sugar daddy", 
+    "sugar baby", "lewd", "thirst trap", "spicy content", "fanhouse", 
+    "fansly", "patreon adult", "private snaps", "premium snaps", "sexting", 
+    "dirty chat", "roleplay sex", "boobs", "tits", "ass", "booty", 
+    "pussy", "dick", "penis", "vagina", "breasts", "nipples", "genital", 
+    "cleavage", "violence", "violent", "gore", "gore video", "bloodshed", 
+    "blood scene", "abuse", "murder", "murder video", "kill", "killing", 
+    "suicide methods", "suicide tips", "self harm", "cutting", 
+    "how to die", "kill someone", "violent video", "torture", "execution", 
+    "gambling", "casino", "casino app", "gambling site", "online casino", 
+    "betting", "sportsbook", "betting tips", "betting app", "online betting", 
+    "betting odds", "odds", "wager", "wager money", "parlay", "spread betting", 
+    "live betting", "crypto betting", "fantasy betting", "real money games", 
+    "cash games", "rummy cash", "teen patti cash", "lottery", "scratch cards", 
+    "poker", "roulette", "slots", "drugs", "drugs online", "buy drugs", 
+    "narcotics", "weed", "smoking", "cigarettes", "hookah", "alcohol", 
+    "alcohol drink", "beer", "testicle", "testicles", "liquor", "drunk", 
+    "vodka", "whiskey", "vaping", "vape", "vape pen", "ecigarette", 
+    "cocaine", "meth", "heroin", "mdma", "lsd", "ecstasy", "pr0n", 
+    "p0rn", "s3x", "fxck", "fuk", "fck", "seggs", "sx", "pron", 
+    "po rn", "p orn", "sperm", "cum", "ejaculate", "orgy", "anal", 
+    "vaginal", "fuck"
+]
