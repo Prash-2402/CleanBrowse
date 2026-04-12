@@ -28,6 +28,18 @@ DATABASE_PATH = Path(
 ROOT_ROUTE = "/"
 ANALYZE_TEXT_ROUTE = "/analyze-text"
 REPORT_EVENT_ROUTE = "/report-event"
+REPORT_UNINSTALL_ROUTE = "/report-uninstall"
+HEARTBEAT_ROUTE = "/heartbeat"
+ANALYZE_IMAGE_ROUTE = "/analyze-image"
+
+# Time in seconds before we consider the heartbeat "lost"
+# Should be > HEARTBEAT_INTERVAL (20s)
+HEARTBEAT_TIMEOUT = 25 
+# Max time drift in seconds before we suspect system sleep
+SLEEP_DRIFT_THRESHOLD = 15 
+
+IMAGE_MODEL_FILENAME = "nsfw_model.onnx"
+IMAGE_MODEL_PATH = MODELS_DIR / IMAGE_MODEL_FILENAME
 
 TEXT_FIELD = "text"
 TOXICITY_SCORE_FIELD = "toxicity_score"
@@ -41,7 +53,7 @@ HOME_MESSAGE = "Toxicity API is running."
 HOME_EXAMPLE_TEXT = "You are amazing"
 
 UNSAFE_KEYWORDS = [
-    "sex", "sexvideo", "pornographic", "explicit content", "adult video", 
+    "sex", "sexual", "erection", "erectile", "penile", "dysfunction", "pornographic", "explicit content", "adult video", 
     "adult site", "adult streaming", "adult subscription", "erotic video", 
     "sex tape", "leaked video", "private video", "hidden cam", 
     "sexvideo live", "sexvideo call", "sexvideo site", "sexvideo app", 

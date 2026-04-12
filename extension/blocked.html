@@ -55,18 +55,43 @@
         margin-top: 16px;
         padding: 12px;
         overflow-wrap: anywhere;
-        border-radius: 12px;
-        background: #fff3e6;
         color: var(--text);
+      }
+
+      #ai-score-container {
+        display: none;
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 12px;
+        background: #fdf2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        font-size: 13px;
+        font-weight: 600;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .ai-badge {
+        background: #ef4444;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        text-transform: uppercase;
       }
     </style>
   </head>
   <body>
     <main>
       <h1>Site Blocked</h1>
-      <p>CleanBrowse blocked this page because its address appears to contain content that may be unsafe for kids.</p>
       <p id="details">URL unavailable.</p>
       <code id="url"></code>
+      
+      <div id="ai-score-container">
+        <span class="ai-badge">AI Analysis</span>
+        <span>Safety Confidence: <span id="score">0</span>%</span>
+      </div>
     </main>
     <script src="blocked.js"></script>
   </body>

@@ -1,9 +1,19 @@
+globalThis.extAPI = typeof browser !== 'undefined' ? browser : chrome;
+
 globalThis.CLEAN_BROWSE_CONFIG = Object.freeze({
   APP_NAME: "CleanBrowse",
   LOG_PREFIX: "[CleanBrowse]",
   LOCAL_API_BASE_URL: "http://127.0.0.1:5000",
   ANALYZE_TEXT_ROUTE: "/analyze-text",
   REPORT_EVENT_ROUTE: "/report-event",
+  REPORT_UNINSTALL_ROUTE: "/report-uninstall",
+  HEARTBEAT_ROUTE: "/heartbeat",
+  HEARTBEAT_INTERVAL: 15000, // 15 seconds
+  SAFETY_MODES: Object.freeze({
+    KID: { id: "KID", label: "Kid", threshold: 0.2, description: "Maximum safety. Blocks even mildly suggestive content." },
+    TEEN: { id: "TEEN", label: "Teen", threshold: 0.5, description: "Standard safety. Balanced AI filtering for adolescents." }
+  }),
+  DEFAULT_MODE_ID: "TEEN",
   BLOCKED_PAGE_FILENAME: "blocked.html",
   SAFE_URL_PREFIXES: Object.freeze([
     "chrome://",
@@ -40,6 +50,8 @@ globalThis.CLEAN_BROWSE_CONFIG = Object.freeze({
   URL_BLOCK_CATEGORIES: Object.freeze({
     "adult": [
       "porn",
+      "sexual",
+      "erection",
       "pornographic",
       "explicit content",
       "xxx",
@@ -225,6 +237,11 @@ globalThis.CLEAN_BROWSE_CONFIG = Object.freeze({
   }),
   TEXT_FILTER_TERMS: Object.freeze([
     "sex",
+    "sexual",
+    "erection",
+    "erectile",
+    "penile",
+    "dysfunction",
     "sexvideo",
     "pornographic",
     "explicit content",
@@ -403,6 +420,7 @@ globalThis.CLEAN_BROWSE_CONFIG = Object.freeze({
     "vaginal",
     "fuck"
   ]),
-  TEXT_SCAN_TARGET_SELECTOR: "p, span, div",
+  TEXT_SCAN_TARGET_SELECTOR: "p, span, div, h1, h2, h3, h4, h5, h6, label, section, article",
+  IMAGE_SCAN_SELECTOR: "img",
   BLUR_CLASS_NAME: "kid-safe-blur"
 });

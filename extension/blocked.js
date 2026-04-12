@@ -23,8 +23,15 @@ setTimeout(() => {
       
       if (blockReason && blockReason !== "undefined" && blockReason !== "") {
         const titleCaseReason = blockReason.charAt(0).toUpperCase() + blockReason.slice(1);
-        const reasonPara = document.querySelector('h1 + p');
-        reasonPara.innerHTML = `CleanBrowse proactively blocked this page due to <b>${titleCaseReason}</b> keywords.`;
+        const reasonPara = document.getElementById("details");
+        reasonPara.innerHTML = `CleanBrowse proactively blocked this page due to <b>${titleCaseReason}</b> detection.`;
+      }
+
+      const score = getParam("score");
+      if (score && !isNaN(score)) {
+        const confidence = (parseFloat(score) * 100).toFixed(0);
+        document.getElementById("score").textContent = confidence;
+        document.getElementById("ai-score-container").style.display = "flex";
       }
     } else {
       document.getElementById("details").textContent = "Raw URL without params: " + rawUrl;

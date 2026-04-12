@@ -5,7 +5,8 @@
   "description": "Blocks unsafe sites and softens unsafe text for kid-safe browsing.",
   "permissions": [
     "tabs",
-    "webNavigation"
+    "webNavigation",
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"

@@ -3,7 +3,8 @@ const {
   CHARACTER_VARIANTS,
   LOG_PREFIX,
   TEXT_FILTER_TERMS,
-  TEXT_SCAN_TARGET_SELECTOR
+  TEXT_SCAN_TARGET_SELECTOR,
+  IMAGE_SCAN_SELECTOR
 } = globalThis.CLEAN_BROWSE_CONFIG;
 
 console.log(`${LOG_PREFIX} Content filtering active.`);
@@ -158,7 +159,7 @@ async function processAIQueue() {
         return resolve();
       }
 
-      chrome.runtime.sendMessage({ action: "analyzeText", text: item.text }, (response) => {
+      extAPI.runtime.sendMessage({ action: "analyzeText", text: item.text }, (response) => {
         // If the AI flag is unsafe, apply the blur!
         if (response && response.label === "unsafe" && item.node.isConnected) {
           const span = document.createElement("span");
@@ -168,7 +169,7 @@ async function processAIQueue() {
           item.node.replaceWith(span);
           
           // Secretly report this to the backend DB!
-          chrome.runtime.sendMessage({
+          extAPI.runtime.sendMessage({
             action: "reportEvent",
             eventType: "unsafe_content",
             snippet: item.text.substring(0, 250), // keep it compact for DB
@@ -181,6 +182,90 @@ async function processAIQueue() {
   }
 
   processingQueue = false;
+}
+
+const imageAnalyzeQueue = [];
+let processingImageQueue = false;
+
+async function processImageAIQueue() {
+  if (processingImageQueue) return;
+  processingImageQueue = true;
+
+  while (imageAnalyzeQueue.length > 0) {
+    const batch = imageAnalyzeQueue.splice(0, 3);
+    
+    await Promise.all(batch.map((item) => new Promise((resolve) => {
+      if (!item.img.isConnected) return resolve();
+
+      extAPI.runtime.sendMessage({ 
+        action: "analyzeImage", 
+        imageUrl: item.img.src,
+        altText: item.img.alt,
+        title: item.img.title
+      }, (response) => {
+        if (response && response.label === "unsafe" && item.img.isConnected) {
+          item.img.classList.add(BLUR_CLASS);
+          item.img.title = `Blurred by CleanBrowse AI (Score: ${response.score.toFixed(2)})`;
+          
+          extAPI.runtime.sendMessage({
+            action: "reportEvent",
+            eventType: "unsafe_image",
+            snippet: `Image: ${item.img.src.substring(0, 100)}... Alt: ${item.img.alt}`,
+            severity: "high"
+          });
+        }
+        resolve();
+      });
+    })));
+  }
+
+  processingImageQueue = false;
+}
+
+function blurUnsafeImagesInElement(element) {
+  if (!element) return;
+
+  const images = element.matches(IMAGE_SCAN_SELECTOR) 
+    ? [element] 
+    : element.querySelectorAll(IMAGE_SCAN_SELECTOR);
+
+  for (const img of images) {
+    if (shouldSkipElement(img)) continue;
+
+    // Metadata Pass (Instant)
+    const metadataStr = `${img.src} ${img.alt} ${img.title}`.toLowerCase();
+    let metadataUnsafe = false;
+
+    for (const pattern of UNSAFE_PATTERNS) {
+      pattern.lastIndex = 0;
+      if (pattern.test(metadataStr)) {
+        metadataUnsafe = true;
+        break;
+      }
+    }
+
+    if (metadataUnsafe) {
+      img.classList.add(BLUR_CLASS);
+      img.title = "Blurred by CleanBrowse (Metadata Match)";
+      
+      extAPI.runtime.sendMessage({
+        action: "reportEvent",
+        eventType: "unsafe_image_metadata",
+        snippet: `Image: ${img.src.substring(0, 100)}...`,
+        severity: "medium"
+      });
+    } else {
+      // AI Pass (Async)
+      // Only scan images that have a proper URL and aren't tiny icons
+      if (img.src && img.src.startsWith('http') && (img.width > 50 || img.height > 50 || !img.complete)) {
+        imageAnalyzeQueue.push({ img });
+      }
+    }
+  }
+
+  if (imageAnalyzeQueue.length > 0) {
+    processImageAIQueue();
+  }
 }
 
 function blurUnsafeWordsInElement(element) {
@@ -247,14 +332,22 @@ function scrubDocument(rootNode = document.body) {
     blurUnsafeWordsInElement(rootNode);
   }
 
+  if (rootNode.nodeType === Node.ELEMENT_NODE && (rootNode.matches(IMAGE_SCAN_SELECTOR) || rootNode.querySelector(IMAGE_SCAN_SELECTOR))) {
+    blurUnsafeImagesInElement(rootNode);
+  }
+
   if (rootNode.nodeType !== Node.ELEMENT_NODE) {
     return;
   }
 
   const matchingElements = rootNode.querySelectorAll(TARGET_SELECTOR);
-
   for (const element of matchingElements) {
     blurUnsafeWordsInElement(element);
+  }
+
+  const images = rootNode.querySelectorAll(IMAGE_SCAN_SELECTOR);
+  if (images.length > 0) {
+    blurUnsafeImagesInElement(rootNode);
   }
 }
 
