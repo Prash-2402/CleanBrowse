@@ -10,13 +10,20 @@ const {
   DEFAULT_MODE_ID
 } = globalThis.CLEAN_BROWSE_CONFIG;
 
-let activeThreshold = SAFETY_MODES[DEFAULT_MODE_ID].threshold;
+const {
+  LOCAL_API_BASE_URL,
+  REPORT_STATUS_ROUTE
+} = globalThis.CLEAN_BROWSE_CONFIG;
+
+let activeModeId = DEFAULT_MODE_ID;
+let activeThreshold = SAFETY_MODES[activeModeId].threshold;
 const IMAGE_RESULTS_CACHE = new Map();
 
 // Load initial settings and listen for changes
 extAPI.storage.local.get("activeModeId", (data) => {
   if (data.activeModeId && SAFETY_MODES[data.activeModeId]) {
-    activeThreshold = SAFETY_MODES[data.activeModeId].threshold;
+    activeModeId = data.activeModeId;
+    activeThreshold = SAFETY_MODES[activeModeId].threshold;
   }
 });
 
@@ -24,6 +31,7 @@ extAPI.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.activeModeId) {
     const newModeId = changes.activeModeId.newValue;
     if (SAFETY_MODES[newModeId]) {
+      activeModeId = newModeId;
       activeThreshold = SAFETY_MODES[newModeId].threshold;
       console.log(`${LOG_PREFIX} Switched to ${SAFETY_MODES[newModeId].label} mode (Threshold: ${activeThreshold})`);
     }
@@ -141,6 +149,35 @@ function reportEvent(eventType, url, snippet = "", severity = "medium") {
   }).catch((error) => console.error(`${LOG_PREFIX} Failed to report event:`, error));
 }
 
+// Notify the backend of the reason for shutdown.
+// Uses sendBeacon (not fetch) so it fires reliably during browser/extension shutdown.
+// Uses URLSearchParams (application/x-www-form-urlencoded) NOT JSON, because:
+//   - JSON content type triggers CORS preflight which sendBeacon can't do during unload
+//   - URLSearchParams is a CORS "simple" type — no preflight, always delivered.
+function reportShutdown(reason) {
+  const url = `${LOCAL_API_BASE_URL}${REPORT_STATUS_ROUTE}`;
+  const params = new URLSearchParams({ reason });
+
+  if (reason === "browser_closing") {
+    // Cancel the heartbeat alarm immediately — no point pinging while browser shuts down.
+    // onStartup will recreate it when the browser opens again.
+    extAPI.alarms.clear("cleanbrowse-heartbeat");
+    console.log(`${LOG_PREFIX} Heartbeat alarm cancelled. Will resume on next browser start.`);
+  }
+
+  // sendBeacon returns false if it couldn't queue the request
+  const queued = navigator.sendBeacon ? navigator.sendBeacon(url, params) : false;
+  
+  if (!queued) {
+    // Fallback to fetch if beacon failed to queue (e.g. browser already tearing down)
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason })
+    }).catch(() => {});
+  }
+}
+
 function reportHeartbeat() {
   fetch(`${globalThis.CLEAN_BROWSE_CONFIG.LOCAL_API_BASE_URL}${globalThis.CLEAN_BROWSE_CONFIG.HEARTBEAT_ROUTE}`, {
     method: "POST",
@@ -149,17 +186,45 @@ function reportHeartbeat() {
     },
     body: JSON.stringify({ 
       timestamp: Date.now(),
-      activeMode: activeMode // Reports current safety mode (Kid/Teen)
+      activeMode: activeModeId // Reports current safety mode ID (KID/TEEN)
     })
   }).catch(() => {
     // Fail silently, likely server or extension off
   });
 }
 
-// Start heartbeat!
-setInterval(reportHeartbeat, globalThis.CLEAN_BROWSE_CONFIG.HEARTBEAT_INTERVAL);
-// Initial ping
-reportHeartbeat();
+// Use chrome.alarms instead of setInterval for the heartbeat.
+// Alarms GUARANTEE the service worker wakes up periodically even if Chrome idle-killed it.
+// This keeps the service worker "recently alive" so shutdown events (onRemoved) are delivered.
+function setupHeartbeatAlarm() {
+  // Create the alarm only if it doesn't already exist
+  extAPI.alarms.get("cleanbrowse-heartbeat", (existing) => {
+    if (!existing) {
+      extAPI.alarms.create("cleanbrowse-heartbeat", { 
+        periodInMinutes: 0.5  // Every 30 seconds (minimum for unpacked extensions)
+      });
+    }
+  });
+}
+
+setupHeartbeatAlarm();
+reportHeartbeat(); // Initial ping on startup
+
+// Fire on every alarm tick
+extAPI.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "cleanbrowse-heartbeat") {
+    reportHeartbeat();
+  }
+});
+
+// Re-setup alarm when Chrome starts fresh (browser reopen)
+extAPI.runtime.onStartup.addListener(() => {
+  console.log(`${LOG_PREFIX} Browser started. Forcing hard reload of the extension for a clean slate...`);
+  // Calling reload() forcefully tears down the extension and starts it fresh.
+  // When it starts up again, the global scope will run, fully resetting variables 
+  // and re-establishing the heartbeat and alarms.
+  extAPI.runtime.reload();
+});
 
 function checkUrlForUnsafeSearch(url, tabId, frameId = 0) {
   if (frameId !== 0 || !url) {
@@ -321,3 +386,97 @@ extAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep channel open
   }
 });
+
+// ------------------------------------------------------------------
+// Shutdown Detection: Distinguish browser-close from extension-disable
+// ------------------------------------------------------------------
+
+// STRATEGY:
+//  - Browser close → windows.onRemoved fires for each window.
+//    We maintain a synchronous counter so we can call sendBeacon IMMEDIATELY
+//    when it hits 0, without any async getAll() that Chrome may kill before
+//    it completes during browser shutdown.
+//    Any false positive (stale counter from service worker restart) is harmless:
+//    if heartbeats continue arriving, the backend clears the reason automatically.
+//
+//  - Extension disabled → onSuspend fires. We use getAll() there since the
+//    service worker is still fully alive at that point, only the extension is
+//    being killed (not the browser).
+
+let _windowCount = 0;
+
+// Seed count on startup (async is fine here — not time-critical)
+extAPI.windows.getAll({}, (windows) => {
+  _windowCount = windows ? windows.length : 0;
+  console.log(`${LOG_PREFIX} Window count seeded: ${_windowCount}`);
+});
+
+// --- Browser Close Detection ---
+// Track count with every window event and send synchronously when 0.
+if (extAPI.windows && extAPI.windows.onCreated) {
+  extAPI.windows.onCreated.addListener(() => { _windowCount++; });
+}
+
+if (extAPI.windows && extAPI.windows.onRemoved) {
+  extAPI.windows.onRemoved.addListener(() => {
+    _windowCount = Math.max(0, _windowCount - 1);
+    
+    if (_windowCount === 0) {
+      // sendBeacon is SYNCHRONOUS (enqueues immediately, no callback needed).
+      // Chrome guarantees sendBeacon completes even as the browser is closing.
+      console.log(`${LOG_PREFIX} Last window closed. Sending browser_closing beacon.`);
+      reportShutdown("browser_closing");
+    }
+  });
+}
+
+// --- Extension Disable Detection ---
+// onSuspend fires when the service worker is killed.
+// If windows still exist at this point, the extension was toggled off by the user.
+// getAll() is safe here because the BROWSER is still running (only the extension is dying).
+extAPI.runtime.onSuspend.addListener(() => {
+  extAPI.windows.getAll({}, (windows) => {
+    if (windows && windows.length > 0) {
+      console.log(`${LOG_PREFIX} onSuspend with ${windows.length} open windows. Extension toggled off.`);
+      reportShutdown("extension_suspending");
+    }
+    // If 0 windows, beacon was already sent via onRemoved above.
+  });
+});
+
+// ------------------------------------------------------------------
+// Incognito Window Detection: Alert when user opens incognito window
+// ------------------------------------------------------------------
+// We listen to windows.onCreated (not tabs.onCreated) because:
+// - If the extension is NOT allowed in incognito, tabs.onCreated is INVISIBLE
+//   for incognito tabs — Chrome simply doesn't deliver those events.
+// - But windows.onCreated DOES fire for incognito windows even without access,
+//   and the window object exposes window.incognito === true.
+if (extAPI.windows && extAPI.windows.onCreated) {
+  extAPI.windows.onCreated.addListener((window) => {
+    if (window.incognito) {
+      // Check if we have incognito coverage
+      if (extAPI.extension && extAPI.extension.isAllowedIncognitoAccess) {
+        extAPI.extension.isAllowedIncognitoAccess((isAllowed) => {
+          if (!isAllowed) {
+            reportEvent(
+              "bypass_attempt",
+              "incognito://new-window",
+              "User opened an incognito window. CleanBrowse has NO visibility into this session.",
+              "high"
+            );
+          }
+          // If isAllowed, extension IS monitoring incognito — no alert needed.
+        });
+      } else {
+        // Can't check, but window is incognito — alert to be safe
+        reportEvent(
+          "bypass_attempt",
+          "incognito://new-window",
+          "User opened an incognito window. CleanBrowse may not be monitoring this session.",
+          "high"
+        );
+      }
+    }
+  });
+}

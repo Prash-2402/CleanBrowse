@@ -31,12 +31,27 @@ REPORT_EVENT_ROUTE = "/report-event"
 REPORT_UNINSTALL_ROUTE = "/report-uninstall"
 HEARTBEAT_ROUTE = "/heartbeat"
 ANALYZE_IMAGE_ROUTE = "/analyze-image"
+REPORT_STATUS_ROUTE = "/report-status"
 
 # Time in seconds before we consider the heartbeat "lost"
-# Should be > HEARTBEAT_INTERVAL (20s)
-HEARTBEAT_TIMEOUT = 25 
+# Alarm-based heartbeats fire every 30s (minimum for unpacked extensions),
+# so we use 70s (2x interval + buffer) to avoid false positives.
+HEARTBEAT_TIMEOUT = 70
+
 # Max time drift in seconds before we suspect system sleep
 SLEEP_DRIFT_THRESHOLD = 15 
+
+# Browser processes to check before alerting "Protection Disabled"
+MONITORED_BROWSERS = [
+    "chrome.exe", 
+    "msedge.exe", 
+    "brave.exe", 
+    "opera.exe", 
+    "firefox.exe", 
+    "vivaldi.exe", 
+    "iexplore.exe", 
+    "tor.exe"
+]
 
 IMAGE_MODEL_FILENAME = "nsfw_model.onnx"
 IMAGE_MODEL_PATH = MODELS_DIR / IMAGE_MODEL_FILENAME

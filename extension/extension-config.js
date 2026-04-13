@@ -8,6 +8,8 @@ globalThis.CLEAN_BROWSE_CONFIG = Object.freeze({
   REPORT_EVENT_ROUTE: "/report-event",
   REPORT_UNINSTALL_ROUTE: "/report-uninstall",
   HEARTBEAT_ROUTE: "/heartbeat",
+  ANALYZE_IMAGE_ROUTE: "/analyze-image",
+  REPORT_STATUS_ROUTE: "/report-status",
   HEARTBEAT_INTERVAL: 15000, // 15 seconds
   SAFETY_MODES: Object.freeze({
     KID: { id: "KID", label: "Kid", threshold: 0.2, description: "Maximum safety. Blocks even mildly suggestive content." },

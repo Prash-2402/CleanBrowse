@@ -78,11 +78,12 @@ class ImageModerator:
         
         # Transpose to (Batch, Channel, Height, Width) if model expects it
         # Most ONNX models expect (1, 3, 224, 224) or (1, 224, 224, 3)
-        # We'll try to detect input shape
-        input_name = self.session.get_inputs()[0].name
-        input_shape = self.session.get_inputs()[0].shape # e.g. [1, 224, 224, 3] or [1, 3, 224, 224]
+        input_meta = self.session.get_inputs()[0]
+        input_name = input_meta.name
+        input_shape = input_meta.shape
         
-        if input_shape[1] == 3: # NCHW
+        # Check if model expects NCHW (Channels at index 1 or named 'num_channels')
+        if len(input_shape) == 4 and (input_shape[1] == 3 or input_shape[1] == 'num_channels'):
             img_data = img_data.transpose(2, 0, 1)
             
         img_data = np.expand_dims(img_data, axis=0)

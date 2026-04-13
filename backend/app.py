@@ -1,4 +1,8 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
+import time
+import threading
+import traceback
 
 from backend.api_config import (
     ANALYZE_TEXT_ROUTE,
@@ -15,16 +19,15 @@ from backend.api_config import (
     HEARTBEAT_TIMEOUT,
     SLEEP_DRIFT_THRESHOLD,
     ANALYZE_IMAGE_ROUTE,
+    REPORT_STATUS_ROUTE,
 )
-import time
-import threading
-import traceback
 from backend.text_safety import score_text_safety
 from backend.database import init_db, insert_event
 from backend.alerts import trigger_desktop_alert
 from backend.image_logic import moderator
 
 app = Flask(__name__)
+CORS(app)
 
 # Initialize the SQLite Database
 init_db()
@@ -116,9 +119,15 @@ LAST_ACTIVE_MODE = "Unknown"
 ALERTTED_STALE = False
 HEARTBEAT_LOCK = threading.Lock()
 
+# Browser open/close state — set immediately when beacon arrives,
+# independent of the heartbeat timeout cycle.
+# True  = browser is open, protection is active
+# False = browser_closing signal received, suppress all watchdog alerts
+BROWSER_OPEN = True
+
 @app.post(HEARTBEAT_ROUTE)
 def heartbeat():
-    global LAST_HEARTBEAT_TIME, ALERTTED_STALE, LAST_ACTIVE_MODE
+    global LAST_HEARTBEAT_TIME, ALERTTED_STALE, LAST_ACTIVE_MODE, BROWSER_OPEN
     data = request.get_json(silent=True) or {}
     mode = data.get("activeMode", "Unknown")
     
@@ -128,11 +137,44 @@ def heartbeat():
         
         LAST_HEARTBEAT_TIME = time.time()
         LAST_ACTIVE_MODE = mode
+        
+        # Browser is confirmed open again — re-enable watchdog checks
+        if not BROWSER_OPEN:
+            print(f"\n[INFO] Browser reopened. Protection monitoring resumed (Mode: {mode}).")
+        BROWSER_OPEN = True
+        
         if ALERTTED_STALE:
             print(f"\n[INFO] Heartbeat restored. Extension is back online (Mode: {mode}).")
         ALERTTED_STALE = False
     
     return jsonify({"status": "alive", "mode": mode})
+
+
+@app.post(REPORT_STATUS_ROUTE)
+def report_status():
+    """Extension calls this to announce a graceful shutdown reason before going silent.
+    Accepts both application/x-www-form-urlencoded (sendBeacon) and application/json (fetch fallback).
+    """
+    global BROWSER_OPEN, ALERTTED_STALE
+    
+    # sendBeacon sends as form-encoded; fetch fallback sends as JSON
+    reason = (
+        request.form.get("reason")
+        or (request.get_json(silent=True) or {}).get("reason")
+        or "unknown"
+    )
+    
+    with HEARTBEAT_LOCK:
+        if reason == "browser_closing":
+            # Flip state immediately — watchdog will skip all checks until browser reopens
+            BROWSER_OPEN = False
+            ALERTTED_STALE = True  # Suppress watchdog until next heartbeat
+            print(f"\n[INFO] Browser closing signal received. Watchdog paused until browser reopens.")
+        elif reason == "extension_suspending":
+            # Extension disabled — keep BROWSER_OPEN = True so watchdog fires the alert after timeout
+            print(f"\n[INFO] Extension suspending signal received. Alert will trigger after {HEARTBEAT_TIMEOUT}s.")
+    
+    return jsonify({"status": "acknowledged", "reason": reason})
 
 @app.post(ANALYZE_IMAGE_ROUTE)
 def analyze_image():
@@ -150,9 +192,9 @@ def analyze_image():
     return jsonify(result)
 
 def watchdog_monitor():
-    global LAST_HEARTBEAT_TIME, ALERTTED_STALE
+    global LAST_HEARTBEAT_TIME, ALERTTED_STALE, BROWSER_OPEN
     
-    check_interval = 10 # seconds (High responsiveness)
+    check_interval = 10 # seconds
     last_check_time = time.time()
     
     while True:
@@ -165,25 +207,29 @@ def watchdog_monitor():
             drift = elapsed - check_interval
             
             if drift > SLEEP_DRIFT_THRESHOLD:
-                # System likely slept. Reset the clock to avoid fake alert.
                 with HEARTBEAT_LOCK:
                     LAST_HEARTBEAT_TIME = now
                     ALERTTED_STALE = False
             else:
-                # 2. Tamper Detection: Is the heartbeat missing while system is awake?
                 with HEARTBEAT_LOCK:
-                    if not ALERTTED_STALE and (now - LAST_HEARTBEAT_TIME) > HEARTBEAT_TIMEOUT:
+                    # 2. If browser is closed, skip ALL checks — no alerting while browser is down.
+                    #    BROWSER_OPEN flips back to True the instant the next heartbeat arrives.
+                    if not BROWSER_OPEN:
+                        pass  # Silently skip — browser is known to be closed
+                    
+                    elif not ALERTTED_STALE and (now - LAST_HEARTBEAT_TIME) > HEARTBEAT_TIMEOUT:
+                        # Heartbeats stopped while browser is open — something is wrong
                         ALERTTED_STALE = True
                         try:
-                            event_id = insert_event(
-                                event_type="bypass_attempt", 
-                                url="Protection Disabled", 
-                                snippet="CleanBrowse stopped sending heatbeats while system was active. It was likely turned off.", 
+                            insert_event(
+                                event_type="bypass_attempt",
+                                url="Protection Disabled",
+                                snippet="CleanBrowse stopped sending heartbeats while the browser was open. Extension may have been disabled or removed.",
                                 severity="high"
                             )
                             trigger_desktop_alert(
-                                "CleanBrowse Security Alert", 
-                                "CRITICAL: Protection Disabled! Extension was turned off while computer is active."
+                                "CleanBrowse Security Alert",
+                                "WARNING: CleanBrowse protection is OFF! Extension was disabled or removed."
                             )
                         except Exception as e:
                             print(f"Error in watchdog during alert: {e}")
@@ -192,7 +238,7 @@ def watchdog_monitor():
         except Exception as e:
             print(f"Watchdog loop encountered an error: {e}")
             traceback.print_exc()
-            time.sleep(5) # Avoid rapid-fire crashing
+            time.sleep(5)
 
 # Start the watchdog in a background thread
 monitor_thread = threading.Thread(target=watchdog_monitor, daemon=True)
