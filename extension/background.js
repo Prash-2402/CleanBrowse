@@ -150,32 +150,25 @@ function reportEvent(eventType, url, snippet = "", severity = "medium") {
 }
 
 // Notify the backend of the reason for shutdown.
-// Uses sendBeacon (not fetch) so it fires reliably during browser/extension shutdown.
-// Uses URLSearchParams (application/x-www-form-urlencoded) NOT JSON, because:
-//   - JSON content type triggers CORS preflight which sendBeacon can't do during unload
-//   - URLSearchParams is a CORS "simple" type — no preflight, always delivered.
+// Use fetch + keepalive: true for maximum reliability in MV3.
+// keepalive ensures the request continues even if the Service Worker is terminated.
 function reportShutdown(reason) {
   const url = `${LOCAL_API_BASE_URL}${REPORT_STATUS_ROUTE}`;
   const params = new URLSearchParams({ reason });
 
   if (reason === "browser_closing") {
-    // Cancel the heartbeat alarm immediately — no point pinging while browser shuts down.
-    // onStartup will recreate it when the browser opens again.
+    // Stop heartbeats immediately
     extAPI.alarms.clear("cleanbrowse-heartbeat");
-    console.log(`${LOG_PREFIX} Heartbeat alarm cancelled. Will resume on next browser start.`);
   }
 
-  // sendBeacon returns false if it couldn't queue the request
-  const queued = navigator.sendBeacon ? navigator.sendBeacon(url, params) : false;
-  
-  if (!queued) {
-    // Fallback to fetch if beacon failed to queue (e.g. browser already tearing down)
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason })
-    }).catch(() => {});
-  }
+  fetch(url, {
+    method: "POST",
+    body: params,
+    keepalive: true,
+    mode: "no-cors" // Simple request = no preflight
+  }).catch(() => {
+    // Fail silently
+  });
 }
 
 function reportHeartbeat() {
@@ -217,12 +210,10 @@ extAPI.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-// Re-setup alarm when Chrome starts fresh (browser reopen)
+// When the browser starts fresh, reload the extension to ensure a clean state,
+// recreate the alarm, and send the first heartbeat.
 extAPI.runtime.onStartup.addListener(() => {
-  console.log(`${LOG_PREFIX} Browser started. Forcing hard reload of the extension for a clean slate...`);
-  // Calling reload() forcefully tears down the extension and starts it fresh.
-  // When it starts up again, the global scope will run, fully resetting variables 
-  // and re-establishing the heartbeat and alarms.
+  console.log(`${LOG_PREFIX} Browser startup detected. Reloading extension for fresh state.`);
   extAPI.runtime.reload();
 });
 
@@ -431,16 +422,16 @@ if (extAPI.windows && extAPI.windows.onRemoved) {
 }
 
 // --- Extension Disable Detection ---
-// onSuspend fires when the service worker is killed.
-// If windows still exist at this point, the extension was toggled off by the user.
-// getAll() is safe here because the BROWSER is still running (only the extension is dying).
+// onSuspend fires when the Service Worker is being unloaded.
+// KEY: Chrome fires windows.onRemoved for ALL windows BEFORE firing onSuspend
+// during a browser close. So by the time onSuspend fires:
+//   - Browser closing -> getAll() returns 0 windows -> no signal sent
+//   - Extension disabled -> getAll() returns open windows -> signal sent
 extAPI.runtime.onSuspend.addListener(() => {
   extAPI.windows.getAll({}, (windows) => {
     if (windows && windows.length > 0) {
-      console.log(`${LOG_PREFIX} onSuspend with ${windows.length} open windows. Extension toggled off.`);
       reportShutdown("extension_suspending");
     }
-    // If 0 windows, beacon was already sent via onRemoved above.
   });
 });
 

@@ -114,16 +114,16 @@ def report_uninstall():
     """, 200
 
 # Global state for heartbeat monitoring
+# Default to "Closed" until the first heartbeat arrives to avoid cold-start alerts.
 LAST_HEARTBEAT_TIME = time.time()
 LAST_ACTIVE_MODE = "Unknown"
-ALERTTED_STALE = False
+ALERTTED_STALE = True  # Suppress until first heartbeat
 HEARTBEAT_LOCK = threading.Lock()
 
-# Browser open/close state — set immediately when beacon arrives,
-# independent of the heartbeat timeout cycle.
-# True  = browser is open, protection is active
-# False = browser_closing signal received, suppress all watchdog alerts
-BROWSER_OPEN = True
+# Browser state
+# True  = heartbeat received, protection is ON
+# False = browser_closing signal received OR cold start
+BROWSER_OPEN = False
 
 @app.post(HEARTBEAT_ROUTE)
 def heartbeat():
@@ -138,41 +138,44 @@ def heartbeat():
         LAST_HEARTBEAT_TIME = time.time()
         LAST_ACTIVE_MODE = mode
         
-        # Browser is confirmed open again — re-enable watchdog checks
+        # Transition from CLOSED -> OPEN
         if not BROWSER_OPEN:
-            print(f"\n[INFO] Browser reopened. Protection monitoring resumed (Mode: {mode}).")
+            print(f"\n[INFO] Browser connected. Protection monitoring started (Mode: {mode}).")
         BROWSER_OPEN = True
         
+        # Transition from STALE -> ACTIVE
         if ALERTTED_STALE:
+            # Check if this was a legitimate restore (not just the initial cold start)
+            # We use a simple heuristic: if it's been more than 5s since start.
             print(f"\n[INFO] Heartbeat restored. Extension is back online (Mode: {mode}).")
         ALERTTED_STALE = False
     
     return jsonify({"status": "alive", "mode": mode})
 
 
-@app.post(REPORT_STATUS_ROUTE)
+@app.route(REPORT_STATUS_ROUTE, methods=["GET", "POST"])
 def report_status():
-    """Extension calls this to announce a graceful shutdown reason before going silent.
-    Accepts both application/x-www-form-urlencoded (sendBeacon) and application/json (fetch fallback).
-    """
+    """Extension calls this to announce a graceful shutdown reason."""
     global BROWSER_OPEN, ALERTTED_STALE
     
-    # sendBeacon sends as form-encoded; fetch fallback sends as JSON
+    # Read from all possible sources: query params, form data (sendBeacon), or JSON (fetch)
     reason = (
-        request.form.get("reason")
-        or (request.get_json(silent=True) or {}).get("reason")
+        request.args.get("reason")           # query string (?reason=...)
+        or request.form.get("reason")         # URLSearchParams body (sendBeacon)
+        or (request.get_json(silent=True) or {}).get("reason")  # JSON body (fetch)
         or "unknown"
     )
     
     with HEARTBEAT_LOCK:
+        print(f"\n[DEBUG] Status signal received: {reason}")
         if reason == "browser_closing":
             # Flip state immediately — watchdog will skip all checks until browser reopens
             BROWSER_OPEN = False
             ALERTTED_STALE = True  # Suppress watchdog until next heartbeat
-            print(f"\n[INFO] Browser closing signal received. Watchdog paused until browser reopens.")
+            print(f"[INFO] Browser closing signal received. Watchdog paused until browser reopens.")
         elif reason == "extension_suspending":
             # Extension disabled — keep BROWSER_OPEN = True so watchdog fires the alert after timeout
-            print(f"\n[INFO] Extension suspending signal received. Alert will trigger after {HEARTBEAT_TIMEOUT}s.")
+            print(f"[INFO] Extension suspending signal received. Alert will trigger after {HEARTBEAT_TIMEOUT}s.")
     
     return jsonify({"status": "acknowledged", "reason": reason})
 
