@@ -1,8 +1,10 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import time
 import threading
 import traceback
+import base64
+from pathlib import Path
 
 from backend.api_config import (
     ANALYZE_TEXT_ROUTE,
@@ -25,6 +27,8 @@ from backend.text_safety import score_text_safety
 from backend.database import init_db, insert_event
 from backend.alerts import trigger_desktop_alert
 from backend.image_logic import moderator
+from backend.reporting import get_dashboard_data
+from backend.api_config import DASHBOARD_ROUTE
 
 app = Flask(__name__)
 CORS(app)
@@ -178,6 +182,38 @@ def report_status():
             print(f"[INFO] Extension suspending signal received. Alert will trigger after {HEARTBEAT_TIMEOUT}s.")
     
     return jsonify({"status": "acknowledged", "reason": reason})
+
+@app.get(DASHBOARD_ROUTE)
+def dashboard():
+    """Renders the parent dashboard with aggregated metrics."""
+    data = get_dashboard_data()
+    # Embed the logo as base64 so it works with Flask's template folder structure
+    logo_b64 = ""
+    try:
+        logo_path = Path(__file__).parent / "static" / "logo.png"
+        if logo_path.exists():
+            logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
+    except Exception:
+        pass
+    return render_template("dashboard.html", data=data, logo_b64=logo_b64)
+
+@app.get("/api/recent-events")
+def recent_events_api():
+    """Lightweight polling endpoint for real-time alert feed updates."""
+    from backend.database import get_db_connection
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, event_type, url, snippet, severity, timestamp FROM events ORDER BY timestamp DESC LIMIT 50"
+        ).fetchall()
+        events = [
+            {"id": r["id"], "type": r["event_type"], "url": r["url"] or "",
+             "snippet": r["snippet"] or "", "severity": r["severity"], "time": r["timestamp"]}
+            for r in rows
+        ]
+        return jsonify({"events": events})
+    finally:
+        conn.close()
 
 @app.post(ANALYZE_IMAGE_ROUTE)
 def analyze_image():

@@ -32,6 +32,7 @@ REPORT_UNINSTALL_ROUTE = "/report-uninstall"
 HEARTBEAT_ROUTE = "/heartbeat"
 ANALYZE_IMAGE_ROUTE = "/analyze-image"
 REPORT_STATUS_ROUTE = "/report-status"
+DASHBOARD_ROUTE = "/dashboard"
 
 # Time in seconds before we consider the heartbeat "lost"
 # Alarm-based heartbeats fire every 30s (minimum for unpacked extensions),

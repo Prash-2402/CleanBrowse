@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CleanBrowse — Parent Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --red:    #FF2222;
+      --red2:   #CC0000;
+      --yellow: #FFD600;
+      --yellow2: #E6B800;
+      --bg:     #111111;
+      --card:   #1A1A1A;
+      --card2:  #222222;
+      --border: #333333;
+      --text:   #FFFFFF;
+      --muted:  #888888;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ═══════════════ HEADER ═══════════════ */
+    .header {
+      background: var(--card);
+      border-bottom: 3px solid var(--red);
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-row img {
+      height: 44px;
+      width: 44px;
+      object-fit: contain;
+    }
+
+    .brand-name {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-clean { color: var(--yellow); }
+    .brand-browse { color: var(--red); }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: -2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 34, 34, 0.1);
+      border: 1px solid rgba(255, 34, 34, 0.4);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--red);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    .refresh-btn {
+      background: var(--yellow);
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: var(--yellow2); }
+
+    .last-refresh {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ═══════════════ MAIN ═══════════════ */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* ═══════════════ THREAT BAR ═══════════════ */
+    .threat-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--red);
+      border-radius: 12px;
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .threat-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .threat-track {
+      flex: 1;
+      height: 12px;
+      background: #2A2A2A;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .threat-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+
+    .threat-status {
+      font-size: 18px;
+      font-weight: 800;
+      white-space: nowrap;
+      min-width: 130px;
+      text-align: right;
+    }
+
+    /* ═══════════════ STAT ROW ═══════════════ */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: #444;
+    }
+
+    .stat-card.red-card  { border-top: 3px solid var(--red); }
+    .stat-card.yel-card  { border-top: 3px solid var(--yellow); }
+    .stat-card.ora-card  { border-top: 3px solid #FF7A00; }
+    .stat-card.gry-card  { border-top: 3px solid #555; }
+
+    .stat-icon {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .stat-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-number {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .stat-number.red    { color: var(--red); }
+    .stat-number.yellow { color: var(--yellow); }
+    .stat-number.orange { color: #FF7A00; }
+    .stat-number.white  { color: var(--text); }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    /* ═══════════════ CHARTS ROW ═══════════════ */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      width: 3px;
+      height: 14px;
+      background: var(--red);
+      border-radius: 2px;
+    }
+
+    /* These canvas elements need explicit pixel heights */
+    #weekChart, #hourChart { width: 100% !important; }
+    #sevChart { width: 100% !important; }
+
+    /* ═══════════════ HOURLY ═══════════════ */
+    .hourly-wrap { margin-bottom: 28px; }
+
+    /* ═══════════════ BOTTOM ROW ═══════════════ */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 16px;
+    }
+
+    /* ═══════════════ LIVE FEED ═══════════════ */
+    .feed-list {
+      max-height: 520px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .feed-list::-webkit-scrollbar { width: 4px; }
+    .feed-list::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+    .feed-item {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .feed-item:first-child { padding-top: 0; }
+    .feed-item:last-child  { border-bottom: none; }
+
+    .feed-sev-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .sev-high   { background: rgba(255,34,34,0.15); }
+    .sev-medium { background: rgba(255,122,0,0.15); }
+    .sev-low    { background: rgba(80,200,80,0.12); }
+
+    .feed-body { min-width: 0; }
+
+    .feed-type {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .feed-url {
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .feed-snippet {
+      font-size: 11px;
+      color: #555;
+      margin-top: 1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .feed-right { text-align: right; flex-shrink: 0; }
+
+    .feed-time {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .sev-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .sev-badge.high   { background: rgba(255,34,34,0.15); color: var(--red); }
+    .sev-badge.medium { background: rgba(255,122,0,0.15); color: #FF7A00; }
+    .sev-badge.low    { background: rgba(80,200,80,0.12); color: #50C850; }
+
+    /* ═══════════════ WEEKLY REPORT ═══════════════ */
+    .week-stat {
+      background: var(--card2);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .week-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+
+    .week-delta {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .delta-up   { color: var(--red); }
+    .delta-down { color: #50C850; }
+    .delta-same { color: var(--muted); }
+
+    .week-val {
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .url-list { margin-top: 20px; }
+    .url-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .url-item:last-child { border-bottom: none; }
+
+    .url-rank {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      background: var(--card2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .url-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .url-count {
+      font-weight: 700;
+      color: var(--yellow);
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════ SEVERITY LEGEND ═══════════════ */
+    .sev-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .sev-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .sev-dot {
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      margin-right: 8px;
+      display: inline-block;
+    }
+
+    /* ═══════════════ EMPTY STATE ═══════════════ */
+    .empty {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty p { font-size: 14px; }
+
+    /* ═══════════════ TOAST ═══════════════ */
+    #toasts {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      max-width: 340px;
+      animation: toastin 0.3s ease;
+      border: 1px solid;
+    }
+
+    @keyframes toastin {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .toast.high   { background: #1f0505; border-color: rgba(255,34,34,0.4);  color: var(--red); }
+    .toast.medium { background: #1f0f00; border-color: rgba(255,122,0,0.4);  color: #FF7A00; }
+    .toast.low    { background: #051505; border-color: rgba(80,200,80,0.3);  color: #50C850; }
+
+    @media (max-width: 1024px) {
+      .stat-row    { grid-template-columns: repeat(2, 1fr); }
+      .charts-row  { grid-template-columns: 1fr; }
+      .bottom-row  { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .header   { padding: 0 16px; }
+      .container{ padding: 20px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-row">
+    {% if logo_b64 %}
+    <img src="data:image/png;base64,{{ logo_b64 }}" alt="CleanBrowse" />
+    {% endif %}
+    <div>
+      <div class="brand-name">
+        <span class="brand-clean">CLEAN</span><span class="brand-browse">BROWSE</span>
+      </div>
+      <div class="brand-sub">Parent Control Center</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="last-refresh" id="lastRefresh"></div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Live
+    </div>
+    <button class="refresh-btn" onclick="location.reload()">⟳ Refresh</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- THREAT BAR -->
+  {% set score = data.danger_score %}
+  {% if score <= 20 %}
+    {% set tc = '#50C850' %}{% set tl = '✅ All Clear' %}
+  {% elif score <= 50 %}
+    {% set tc = '#FFD600' %}{% set tl = '⚠️ Low Risk' %}
+  {% elif score <= 75 %}
+    {% set tc = '#FF7A00' %}{% set tl = '🔶 Moderate Risk' %}
+  {% else %}
+    {% set tc = '#FF2222' %}{% set tl = '🔴 High Risk' %}
+  {% endif %}
+
+  <div class="threat-bar">
+    <div class="threat-label">📡 Threat Level</div>
+    <div class="threat-track">
+      <div class="threat-fill" style="width: {{ score }}%; background: linear-gradient(90deg, {{ tc }}88, {{ tc }});"></div>
+    </div>
+    <div class="threat-status" style="color: {{ tc }}">{{ tl }}</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stat-row">
+    <div class="stat-card red-card">
+      <div class="stat-icon">🚨</div>
+      <div class="stat-title">Total Incidents</div>
+      <div class="stat-number red">{{ data.total_incidents }}</div>
+      <div class="stat-sub">All time recorded</div>
+    </div>
+    <div class="stat-card yel-card">
+      <div class="stat-icon">🔒</div>
+      <div class="stat-title">Blocked Today</div>
+      <div class="stat-number yellow">{{ data.today_count }}</div>
+      <div class="stat-sub">Last 24 hours</div>
+    </div>
+    <div class="stat-card ora-card">
+      <div class="stat-icon">🔍</div>
+      <div class="stat-title">Unsafe Searches</div>
+      <div class="stat-number orange">{{ data.summary.get('unsafe_search', 0) }}</div>
+      <div class="stat-sub">Search intercepted</div>
+    </div>
+    <div class="stat-card gry-card">
+      <div class="stat-icon">⛔</div>
+      <div class="stat-title">Bypass Attempts</div>
+      <div class="stat-number {% if data.summary.get('bypass_attempt', 0) > 0 %}red{% else %}white{% endif %}">
+        {{ data.summary.get('bypass_attempt', 0) }}
+      </div>
+      <div class="stat-sub">{% if data.summary.get('bypass_attempt', 0) > 0 %}Action needed!{% else %}All secure{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- CHARTS: WEEKLY + SEVERITY -->
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title">Weekly Incident Frequency — Last 7 Days</div>
+      <canvas id="weekChart" height="130"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Severity Breakdown — All Time</div>
+      <canvas id="sevChart" height="160"></canvas>
+      <div class="sev-legend">
+        <div class="sev-row">
+          <div><span class="sev-dot" style="background:#FF2222"></span>High Severity</div>
+          <strong style="color:#FF2222">{{ data.severity.get('high', 0) }}</strong>
+        </div>
+        <div class="sev-row">
+          <div><span class="sev-dot" style="background:#FF7A00"></span>Medium Severity</div>
+          <strong style="color:#FF7A00">{{ data.severity.get('medium', 0) }}</strong>
+        </div>
+        <div class="sev-row">
+          <div><span class="sev-dot" style="background:#50C850"></span>Low Severity</div>
+          <strong style="color:#50C850">{{ data.severity.get('low', 0) }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOURLY -->
+  <div class="hourly-wrap card">
+    <div class="card-title">Hourly Activity — Today (24h breakdown)</div>
+    <canvas id="hourChart" height="80"></canvas>
+  </div>
+
+  <div style="height: 24px;"></div>
+
+  <!-- BOTTOM: LIVE FEED + WEEKLY REPORT -->
+  <div class="bottom-row">
+
+    <!-- LIVE FEED -->
+    <div class="card">
+      <div class="card-title" style="justify-content: space-between; display: flex; align-items: center;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:3px; height:14px; background:var(--red); border-radius:2px;"></div>
+          Live Alert Feed
+        </div>
+        <div class="live-badge" style="font-size: 11px;">
+          <div class="live-dot"></div> Auto-updates
+        </div>
+      </div>
+      <div class="feed-list" id="feedList">
+        {% if data.recent %}
+          {% for a in data.recent %}
+          <div class="feed-item" data-id="{{ a.id }}">
+            <div class="feed-sev-icon sev-{{ a.severity }}">
+              {% if a.severity == 'high' %}🔴{% elif a.severity == 'medium' %}🟠{% else %}🟢{% endif %}
+            </div>
+            <div class="feed-body">
+              <div class="feed-type">{{ a.type.replace('_', ' ').title() }}</div>
+              <div class="feed-url" title="{{ a.url }}">{{ a.url if a.url else '—' }}</div>
+              {% if a.snippet %}<div class="feed-snippet">{{ a.snippet[:90] }}</div>{% endif %}
+            </div>
+            <div class="feed-right">
+              <div class="feed-time">{{ a.time[11:19] if a.time and a.time|length > 10 else (a.time or '—') }}</div>
+              <span class="sev-badge {{ a.severity }}">{{ a.severity }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty">
+            <div class="empty-icon">🛡️</div>
+            <p>No incidents recorded yet.<br>Your child is browsing safely!</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- WEEKLY REPORT -->
+    <div class="card">
+      <div class="card-title">Weekly Report</div>
+
+      {% set delta = data.this_week - data.last_week %}
+      <div class="week-stat">
+        <div>
+          <div class="week-label">This Week</div>
+          <div class="week-delta {% if delta > 0 %}delta-up{% elif delta < 0 %}delta-down{% else %}delta-same{% endif %}">
+            {% if delta > 0 %}▲ +{{ delta }} from last week
+            {% elif delta < 0 %}▼ {{ delta }} from last week
+            {% else %}→ Same as last week{% endif %}
+          </div>
+        </div>
+        <div class="week-val" style="color: var(--yellow)">{{ data.this_week }}</div>
+      </div>
+
+      <div class="week-stat">
+        <div class="week-label">Last Week</div>
+        <div class="week-val" style="color: var(--muted); font-size: 22px;">{{ data.last_week }}</div>
+      </div>
+
+      <div class="week-stat">
+        <div class="week-label">High Severity (all time)</div>
+        <div class="week-val" style="color: var(--red)">{{ data.severity.get('high', 0) }}</div>
+      </div>
+
+      <div class="week-stat">
+        <div class="week-label">Blocked Sites (all time)</div>
+        <div class="week-val" style="color: #FF7A00">{{ data.summary.get('blocked_site', 0) }}</div>
+      </div>
+
+      <div class="url-list">
+        <div class="card-title" style="margin-bottom: 12px; font-size: 12px;">Top Flagged URLs — 7 Days</div>
+        {% if data.top_urls %}
+          {% for item in data.top_urls %}
+          <div class="url-item">
+            <div class="url-rank">{{ loop.index }}</div>
+            <div class="url-text" title="{{ item.url }}">{{ item.url }}</div>
+            <div class="url-count">×{{ item.count }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0;">Clean week — no flagged URLs!</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /container -->
+
+<!-- TOASTS -->
+<div id="toasts"></div>
+
+<!-- SCRIPTS -->
+<script>
+/* ── DATA FROM FLASK (real DB data, no sample values) ── */
+const trendsData = {{ data.trends  | tojson }};
+const hourlyData = {{ data.hourly  | tojson }};
+const sevData    = {{ data.severity | tojson }};
+const recentData = {{ data.recent  | tojson }};
+
+/* ── CHART.JS DEFAULTS ── */
+Chart.defaults.color = '#777';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size   = 11;
+
+/* ── WEEKLY LINE CHART ── */
+(function() {
+  const ctx = document.getElementById('weekChart');
+  if (!ctx) return;
+  const c = ctx.getContext('2d');
+  const grad = c.createLinearGradient(0, 0, 0, 200);
+  grad.addColorStop(0, 'rgba(255,34,34,0.30)');
+  grad.addColorStop(1, 'rgba(255,34,34,0.01)');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: trendsData.map(d => d.label),
+      datasets: [{
+        label: 'Incidents',
+        data: trendsData.map(d => d.count),
+        borderColor: '#FF2222',
+        backgroundColor: grad,
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#FF2222',
+        pointBorderColor: '#111',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 800 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1A1A1A',
+          titleColor: '#fff',
+          bodyColor: '#FF2222',
+          borderColor: '#333',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: '#222' },
+          ticks: { stepSize: 1 }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+/* ── SEVERITY DOUGHNUT ── */
+(function() {
+  const ctx = document.getElementById('sevChart');
+  if (!ctx) return;
+  const high   = sevData['high']   || 0;
+  const medium = sevData['medium'] || 0;
+  const low    = sevData['low']    || 0;
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['High', 'Medium', 'Low'],
+      datasets: [{
+        data: [high, medium, low],
+        backgroundColor: ['#FF2222', '#FF7A00', '#50C850'],
+        borderColor: '#1A1A1A',
+        borderWidth: 3,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1A1A1A',
+          titleColor: '#fff',
+          borderColor: '#333',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+        }
+      }
+    }
+  });
+})();
+
+/* ── HOURLY BAR CHART ── */
+(function() {
+  const ctx = document.getElementById('hourChart');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: hourlyData.map(d => d.hour.slice(0,2) + 'h'),
+      datasets: [{
+        label: 'Incidents',
+        data: hourlyData.map(d => d.count),
+        backgroundColor: hourlyData.map(d => d.count > 0 ? '#FFD600' : '#222'),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 800 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1A1A1A',
+          titleColor: '#fff',
+          bodyColor: '#FFD600',
+          borderColor: '#333',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#222' }, ticks: { stepSize: 1 } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+/* ── LAST REFRESH CLOCK ── */
+function updateClock() {
+  const now = new Date();
+  document.getElementById('lastRefresh').textContent =
+    'Updated ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ── REAL-TIME POLLING: new alerts every 10 seconds ── */
+const knownIds = new Set(recentData.map(a => a.id));
+
+function showToast(alert) {
+  const wrap = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast ${alert.severity || 'medium'}`;
+  const icon = alert.severity === 'high' ? '🔴' : alert.severity === 'medium' ? '🟠' : '🟢';
+  t.textContent = icon + ' ' + (alert.type || '').replace(/_/g,' ').toUpperCase() +
+    (alert.url ? ' — ' + alert.url.slice(0, 50) : '');
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 7000);
+}
+
+function prependFeedItem(a) {
+  const list = document.getElementById('feedList');
+  // Remove empty state if present
+  const empty = list.querySelector('.empty');
+  if (empty) empty.remove();
+
+  const div = document.createElement('div');
+  div.className = 'feed-item';
+  div.dataset.id = a.id;
+  const icon = a.severity === 'high' ? '🔴' : a.severity === 'medium' ? '🟠' : '🟢';
+  const time = (a.time || '').slice(11, 19);
+  div.innerHTML = `
+    <div class="feed-sev-icon sev-${a.severity}">${icon}</div>
+    <div class="feed-body">
+      <div class="feed-type">${(a.type||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
+      <div class="feed-url">${a.url || '—'}</div>
+      ${a.snippet ? `<div class="feed-snippet">${a.snippet.slice(0,90)}</div>` : ''}
+    </div>
+    <div class="feed-right">
+      <div class="feed-time">${time}</div>
+      <span class="sev-badge ${a.severity}">${a.severity}</span>
+    </div>`;
+  list.prepend(div);
+}
+
+async function poll() {
+  try {
+    const res = await fetch('/api/recent-events');
+    if (!res.ok) return;
+    const json = await res.json();
+    const newAlerts = (json.events || []).filter(a => !knownIds.has(a.id));
+    newAlerts.forEach(a => {
+      knownIds.add(a.id);
+      prependFeedItem(a);
+      showToast(a);
+    });
+  } catch (_) {}
+}
+
+setInterval(poll, 10000);
+</script>
+</body>
+</html>
