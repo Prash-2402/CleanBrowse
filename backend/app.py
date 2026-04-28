@@ -82,14 +82,7 @@ def report_event():
     
     event_id = insert_event(event_type=event_type, url=url, snippet=snippet, severity=severity)
     
-    # Simulate a Remote Parent push notification using Windows Desktop alerts
-    if severity == "high":
-        alert_title = "CleanBrowse Security Alert"
-        if event_type == "bypass_attempt":
-            alert_msg = f"Security Warning: {url}"
-        else:
-            alert_msg = f"A {event_type} event was blocked at {url}"
-        trigger_desktop_alert(alert_title, alert_msg)
+    # Desktop alerts removed — events are surfaced in the live dashboard feed
     
     return jsonify({"success": True, "event_id": event_id})
 
@@ -103,9 +96,7 @@ def report_uninstall():
         severity="high"
     )
     
-    alert_title = "CleanBrowse Security Alert"
-    alert_msg = "CleanBrowse Extension was uninstalled or disabled!"
-    trigger_desktop_alert(alert_title, alert_msg)
+    # Desktop alert removed — uninstall event is logged to DB and visible in dashboard
     
     return """
     <html>
@@ -266,10 +257,7 @@ def watchdog_monitor():
                                 snippet="CleanBrowse stopped sending heartbeats while the browser was open. Extension may have been disabled or removed.",
                                 severity="high"
                             )
-                            trigger_desktop_alert(
-                                "CleanBrowse Security Alert",
-                                "WARNING: CleanBrowse protection is OFF! Extension was disabled or removed."
-                            )
+                            # Desktop alert removed — bypass is logged to DB
                         except Exception as e:
                             print(f"Error in watchdog during alert: {e}")
             

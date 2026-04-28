@@ -2,10 +2,21 @@ const {
   BLUR_CLASS_NAME,
   CHARACTER_VARIANTS,
   LOG_PREFIX,
+  LOCAL_API_BASE_URL,
   TEXT_FILTER_TERMS,
   TEXT_SCAN_TARGET_SELECTOR,
   IMAGE_SCAN_SELECTOR
 } = globalThis.CLEAN_BROWSE_CONFIG;
+
+// ── Dashboard Guard ──────────────────────────────────────────────────────────
+// Never scan, blur, or report anything on the local CleanBrowse parent dashboard.
+// The dashboard legitimately displays flagged terms as part of its alert feed.
+if (window.location.origin === LOCAL_API_BASE_URL) {
+  console.log(`${LOG_PREFIX} Dashboard detected — content scanning disabled.`);
+  // Stop executing this content script entirely.
+  throw new Error("CleanBrowse: skipping content script on parent dashboard.");
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 console.log(`${LOG_PREFIX} Content filtering active.`);
 

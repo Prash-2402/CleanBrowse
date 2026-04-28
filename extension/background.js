@@ -38,11 +38,23 @@ extAPI.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-const STRICT_MATCH_TERMS = new Set([
-  "sex", "ass", "dick", "kill", "weed", "bet", "odds", "cock", 
-  "tits", "gore", "beer", "drunk", "lust", "strip", "escort", 
-  "nude", "drugs", "xxx", "nsfw","kiss"
-]);
+// ── Unified Word-Boundary Matcher ────────────────────────────────────────────
+// Matches a block term as a WHOLE WORD (or whole phrase) inside any text.
+// Splits on any non-alphanumeric character as a word boundary.
+// Examples:
+//   isWordMatch("testosterone", "testes")     → false ✅
+//   isWordMatch("q=sex&safe=1",  "sex")        → true  ✅
+//   isWordMatch("analogy",        "anal")       → false ✅
+//   isWordMatch("sex+tape+video", "sex tape")  → true  ✅
+function isWordMatch(text, term) {
+  // Escape any regex special chars inside the term itself
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // For multi-word terms (e.g. "sex tape"), allow any non-alphanumeric separator
+  const pattern = escaped.replace(/ +/g, "[^a-z0-9]+");
+  // (?<![a-z0-9]) and (?![a-z0-9]) act as word boundaries without consuming chars
+  const regex = new RegExp(`(?<![a-z0-9])${pattern}(?![a-z0-9])`, "i");
+  return regex.test(text);
+}
 
 const BLOCKED_PAGE_URL = extAPI.runtime.getURL(BLOCKED_PAGE_FILENAME);
 
@@ -67,30 +79,18 @@ function shouldBlockUrl(url) {
     .map((character) => LEET_CHARACTER_MAP[character] || character)
     .join("");
 
-  const alphanumericUrl = leetUrl.replace(/[^a-z0-9]/g, "");
-
   for (const [category, terms] of Object.entries(URL_BLOCK_CATEGORIES)) {
     for (const term of terms) {
+      // Leet-decode the term to match leet-decoded URL
       const normalizedTerm = term
         .toLowerCase()
         .split("")
-        .map((character) => LEET_CHARACTER_MAP[character] || character)
+        .map((ch) => LEET_CHARACTER_MAP[ch] || ch)
         .join("");
 
-      let isMatch = false;
-
-      if (STRICT_MATCH_TERMS.has(term)) {
-        // Must not be immediately surrounded by other letters/numbers (word boundary)
-        const regex = new RegExp(`(^|[^a-z0-9])${normalizedTerm}([^a-z0-9]|$)`, "i");
-        isMatch = regex.test(leetUrl);
-      } else {
-        // For longer, highly specific terms, aggressive substring matching is fine
-        const noSpaceTerm = normalizedTerm.replace(/ /g, "");
-        isMatch = alphanumericUrl.includes(noSpaceTerm);
-      }
-
-      if (isMatch) {
-         return { blocked: true, reason: category };
+      // Word-boundary match only — never a raw substring check
+      if (isWordMatch(leetUrl, normalizedTerm)) {
+        return { blocked: true, reason: category };
       }
     }
   }
@@ -103,20 +103,13 @@ function shouldBlockSearch(query) {
     return { blocked: false, reason: "" };
   }
 
-  const loweredQuery = query.toLowerCase();
+  const loweredQuery = query.toLowerCase().trim();
 
   for (const [category, terms] of Object.entries(URL_BLOCK_CATEGORIES)) {
     for (const term of terms) {
-      const lowerTerm = term.toLowerCase();
-      if (STRICT_MATCH_TERMS.has(term)) {
-        const regex = new RegExp(`(^|[^a-z0-9])${lowerTerm}([^a-z0-9]|$)`, "i");
-        if (regex.test(loweredQuery)) {
-          return { blocked: true, reason: category };
-        }
-      } else {
-        if (loweredQuery.includes(lowerTerm)) {
-          return { blocked: true, reason: category };
-        }
+      // Word-boundary match — "testosterone" will NOT match "testes", "sex" won't match "sexy"
+      if (isWordMatch(loweredQuery, term.toLowerCase())) {
+        return { blocked: true, reason: category };
       }
     }
   }

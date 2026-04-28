@@ -4,148 +4,230 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CleanBrowse — Parent Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --red:    #FF2222;
-      --red2:   #CC0000;
-      --yellow: #FFD600;
-      --yellow2: #E6B800;
-      --bg:     #111111;
-      --card:   #1A1A1A;
-      --card2:  #222222;
-      --border: #333333;
-      --text:   #FFFFFF;
-      --muted:  #888888;
+      --purple:      #7C3AED;
+      --purple-lt:   #EDE9FE;
+      --purple-dk:   #5B21B6;
+      --indigo:      #6366F1;
+      --teal:        #0EA5E9;
+      --teal-lt:     #E0F2FE;
+      --green:       #10B981;
+      --green-lt:    #D1FAE5;
+      --yellow:      #F59E0B;
+      --yellow-lt:   #FEF3C7;
+      --orange:      #F97316;
+      --orange-lt:   #FFF7ED;
+      --red:         #EF4444;
+      --red-lt:      #FEF2F2;
+      --bg:          #F5F3FF;
+      --surface:     #FFFFFF;
+      --card:        #FFFFFF;
+      --text:        #1E1B4B;
+      --muted:       #6B7280;
+      --border:      rgba(124,58,237,0.10);
+      --shadow-sm:   0 2px 8px rgba(124,58,237,0.08);
+      --shadow-md:   0 8px 28px rgba(124,58,237,0.12);
+      --shadow-lg:   0 16px 48px rgba(124,58,237,0.16);
+      --grad-hero:   linear-gradient(135deg, #7C3AED 0%, #6366F1 55%, #0EA5E9 100%);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Nunito', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
     }
 
-    /* ═══════════════ HEADER ═══════════════ */
+    /* ══════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════ */
     .header {
-      background: var(--card);
-      border-bottom: 3px solid var(--red);
-      padding: 0 32px;
+      background: var(--grad-hero);
+      border-bottom: none;
+      padding: 0 36px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 68px;
+      height: 72px;
       position: sticky;
       top: 0;
       z-index: 50;
+      box-shadow: 0 4px 24px rgba(124,58,237,0.30);
+      overflow: hidden;
+    }
+
+    /* Decorative circles in header */
+    .header::before {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      top: -150px; right: 100px;
+      pointer-events: none;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      bottom: -100px; left: 200px;
+      pointer-events: none;
     }
 
     .logo-row {
       display: flex;
       align-items: center;
       gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-box {
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 14px;
+      border: 1.5px solid rgba(255,255,255,0.28);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      flex-shrink: 0;
     }
 
     .logo-row img {
-      height: 44px;
-      width: 44px;
+      height: 44px; width: 44px;
       object-fit: contain;
+      border-radius: 12px;
     }
 
     .brand-name {
       font-size: 22px;
-      font-weight: 800;
+      font-weight: 900;
+      color: #fff;
       letter-spacing: -0.5px;
+      line-height: 1.1;
     }
-
-    .brand-clean { color: var(--yellow); }
-    .brand-browse { color: var(--red); }
+    .brand-name em { font-style: normal; color: rgba(255,255,255,0.72); }
 
     .brand-sub {
       font-size: 10px;
-      color: var(--muted);
+      color: rgba(255,255,255,0.62);
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      margin-top: -2px;
+      font-weight: 700;
+      margin-top: 1px;
     }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .last-refresh {
+      font-size: 12px;
+      color: rgba(255,255,255,0.65);
+      font-weight: 600;
     }
 
     .live-badge {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 34, 34, 0.1);
-      border: 1px solid rgba(255, 34, 34, 0.4);
-      border-radius: 8px;
+      gap: 7px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.26);
+      border-radius: 99px;
       padding: 6px 14px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--red);
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #fff;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.7px;
+      backdrop-filter: blur(10px);
     }
 
     .live-dot {
-      width: 8px; height: 8px;
+      width: 7px; height: 7px;
       border-radius: 50%;
-      background: var(--red);
-      animation: blink 1.2s infinite;
+      background: #4ADE80;
+      box-shadow: 0 0 0 0 rgba(74,222,128,0.5);
+      animation: pulseLive 2s ease-out infinite;
     }
 
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.2; }
+    @keyframes pulseLive {
+      0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }
+      70%  { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+      100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
     }
 
     .refresh-btn {
-      background: var(--yellow);
-      color: #111;
-      border: none;
-      border-radius: 8px;
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.28);
+      border-radius: 10px;
       padding: 8px 18px;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
+      font-family: 'Nunito', sans-serif;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
     }
-    .refresh-btn:hover { background: var(--yellow2); }
-
-    .last-refresh {
-      font-size: 12px;
-      color: var(--muted);
+    .refresh-btn:hover {
+      background: rgba(255,255,255,0.28);
+      transform: translateY(-1px);
     }
 
-    /* ═══════════════ MAIN ═══════════════ */
+    /* ══════════════════════════════════════
+       CONTAINER
+    ══════════════════════════════════════ */
     .container {
-      max-width: 1280px;
+      max-width: 1300px;
       margin: 0 auto;
-      padding: 32px 24px;
+      padding: 32px 28px 48px;
     }
 
-    /* ═══════════════ THREAT BAR ═══════════════ */
+    /* ══════════════════════════════════════
+       THREAT BAR
+    ══════════════════════════════════════ */
     .threat-bar {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-left: 5px solid var(--red);
-      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
       padding: 20px 28px;
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 20px;
       margin-bottom: 28px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
     }
 
+    .threat-bar::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0; width: 5px;
+      background: var(--grad-hero);
+      border-radius: 99px 0 0 99px;
+    }
+
+    .threat-icon { font-size: 22px; flex-shrink: 0; margin-left: 6px; }
+
     .threat-label {
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--muted);
@@ -154,8 +236,8 @@
 
     .threat-track {
       flex: 1;
-      height: 12px;
-      background: #2A2A2A;
+      height: 10px;
+      background: #F0EEFF;
       border-radius: 99px;
       overflow: hidden;
     }
@@ -163,185 +245,237 @@
     .threat-fill {
       height: 100%;
       border-radius: 99px;
-      transition: width 1s ease;
+      transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
     }
 
     .threat-status {
-      font-size: 18px;
-      font-weight: 800;
+      font-size: 17px;
+      font-weight: 900;
       white-space: nowrap;
-      min-width: 130px;
+      min-width: 160px;
       text-align: right;
     }
 
-    /* ═══════════════ STAT ROW ═══════════════ */
+    /* ══════════════════════════════════════
+       STAT CARDS
+    ══════════════════════════════════════ */
     .stat-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      gap: 18px;
       margin-bottom: 28px;
     }
 
     .stat-card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 22px 24px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 22px 22px 18px;
       position: relative;
       overflow: hidden;
-      transition: transform 0.2s, border-color 0.2s;
+      transition: all 0.25s cubic-bezier(0.34,1.3,0.64,1);
+      box-shadow: var(--shadow-sm);
+      cursor: default;
     }
 
     .stat-card:hover {
-      transform: translateY(-3px);
-      border-color: #444;
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
     }
 
-    .stat-card.red-card  { border-top: 3px solid var(--red); }
-    .stat-card.yel-card  { border-top: 3px solid var(--yellow); }
-    .stat-card.ora-card  { border-top: 3px solid #FF7A00; }
-    .stat-card.gry-card  { border-top: 3px solid #555; }
-
-    .stat-icon {
-      font-size: 20px;
-      margin-bottom: 12px;
+    .stat-icon-bg {
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin-bottom: 14px;
     }
+
+    .ic-red    { background: var(--red-lt); }
+    .ic-yellow { background: var(--yellow-lt); }
+    .ic-teal   { background: var(--teal-lt); }
+    .ic-green  { background: var(--green-lt); }
 
     .stat-title {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--muted);
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .stat-number {
-      font-size: 42px;
-      font-weight: 800;
+      font-size: 40px;
+      font-weight: 900;
       letter-spacing: -2px;
       line-height: 1;
     }
 
-    .stat-number.red    { color: var(--red); }
-    .stat-number.yellow { color: var(--yellow); }
-    .stat-number.orange { color: #FF7A00; }
-    .stat-number.white  { color: var(--text); }
+    .num-red    { color: var(--red); }
+    .num-yellow { color: var(--yellow); }
+    .num-teal   { color: var(--teal); }
+    .num-green  { color: var(--green); }
 
     .stat-sub {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--muted);
       margin-top: 8px;
+      font-weight: 600;
     }
 
-    /* ═══════════════ CHARTS ROW ═══════════════ */
-    .charts-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
-      margin-bottom: 28px;
+    /* Accent bar at bottom */
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: 0; right: 0;
+      height: 3px;
+      border-radius: 0 0 20px 20px;
     }
+    .stat-card.red-card::after    { background: linear-gradient(90deg, var(--red), #F97316); }
+    .stat-card.yel-card::after    { background: linear-gradient(90deg, var(--yellow), #FCD34D); }
+    .stat-card.teal-card::after   { background: linear-gradient(90deg, var(--teal), #38BDF8); }
+    .stat-card.green-card::after  { background: linear-gradient(90deg, var(--green), #34D399); }
 
+    /* ══════════════════════════════════════
+       CARD BASE
+    ══════════════════════════════════════ */
     .card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
       padding: 24px;
+      box-shadow: var(--shadow-sm);
     }
 
     .card-title {
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       color: var(--muted);
       margin-bottom: 20px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
     }
 
-    .card-title::before {
-      content: '';
-      width: 3px;
-      height: 14px;
-      background: var(--red);
-      border-radius: 2px;
+    .card-title-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--grad-hero);
+      flex-shrink: 0;
     }
 
-    /* These canvas elements need explicit pixel heights */
-    #weekChart, #hourChart { width: 100% !important; }
-    #sevChart { width: 100% !important; }
+    /* ══════════════════════════════════════
+       CHARTS ROW
+    ══════════════════════════════════════ */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
 
-    /* ═══════════════ HOURLY ═══════════════ */
-    .hourly-wrap { margin-bottom: 28px; }
+    #weekChart, #hourChart, #sevChart { width: 100% !important; }
 
-    /* ═══════════════ BOTTOM ROW ═══════════════ */
+    /* ══════════════════════════════════════
+       HOURLY
+    ══════════════════════════════════════ */
+    .hourly-wrap { margin-bottom: 22px; }
+
+    /* ══════════════════════════════════════
+       BOTTOM ROW
+    ══════════════════════════════════════ */
     .bottom-row {
       display: grid;
-      grid-template-columns: 1.6fr 1fr;
-      gap: 16px;
+      grid-template-columns: 3fr 1fr;
+      gap: 18px;
+      align-items: start;
     }
 
-    /* ═══════════════ LIVE FEED ═══════════════ */
+    /* ══════════════════════════════════════
+       LIVE FEED
+    ══════════════════════════════════════ */
     .feed-list {
-      max-height: 520px;
+      max-height: 680px;
       overflow-y: auto;
-      padding-right: 2px;
+      padding-right: 4px;
     }
 
     .feed-list::-webkit-scrollbar { width: 4px; }
-    .feed-list::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    .feed-list::-webkit-scrollbar-thumb {
+      background: rgba(124,58,237,0.15);
+      border-radius: 99px;
+    }
 
     .feed-item {
       display: grid;
-      grid-template-columns: 36px 1fr auto;
+      grid-template-columns: 40px 1fr auto;
       align-items: center;
       gap: 12px;
       padding: 12px 0;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(124,58,237,0.07);
     }
-
     .feed-item:first-child { padding-top: 0; }
     .feed-item:last-child  { border-bottom: none; }
 
     .feed-sev-icon {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
       flex-shrink: 0;
     }
 
-    .sev-high   { background: rgba(255,34,34,0.15); }
-    .sev-medium { background: rgba(255,122,0,0.15); }
-    .sev-low    { background: rgba(80,200,80,0.12); }
+    .sev-high   { background: var(--red-lt); }
+    .sev-medium { background: var(--orange-lt); }
+    .sev-low    { background: var(--green-lt); }
 
     .feed-body { min-width: 0; }
 
     .feed-type {
       font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 2px;
+      font-weight: 800;
+      margin-bottom: 3px;
+      color: var(--text);
     }
 
     .feed-url {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      font-weight: 600;
     }
 
-    .feed-snippet {
+    /* Highlighted searched/flagged term chip */
+    .feed-snippet-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+      background: linear-gradient(135deg, rgba(124,58,237,0.10), rgba(99,102,241,0.08));
+      border: 1.5px solid rgba(124,58,237,0.18);
+      border-radius: 99px;
+      padding: 3px 10px;
       font-size: 11px;
-      color: #555;
-      margin-top: 1px;
+      font-weight: 800;
+      color: var(--purple);
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .feed-snippet-chip .chip-label {
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--indigo);
+      flex-shrink: 0;
     }
 
     .feed-right { text-align: right; flex-shrink: 0; }
@@ -350,98 +484,86 @@
       font-size: 11px;
       color: var(--muted);
       margin-bottom: 5px;
+      font-weight: 600;
     }
 
     .sev-badge {
       display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 9.5px;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
-      padding: 2px 8px;
-      border-radius: 4px;
+      letter-spacing: 0.5px;
+      padding: 3px 9px;
+      border-radius: 99px;
     }
 
-    .sev-badge.high   { background: rgba(255,34,34,0.15); color: var(--red); }
-    .sev-badge.medium { background: rgba(255,122,0,0.15); color: #FF7A00; }
-    .sev-badge.low    { background: rgba(80,200,80,0.12); color: #50C850; }
+    .sev-badge.high   { background: var(--red-lt);    color: var(--red); }
+    .sev-badge.medium { background: var(--orange-lt); color: var(--orange); }
+    .sev-badge.low    { background: var(--green-lt);  color: var(--green); }
 
-    /* ═══════════════ WEEKLY REPORT ═══════════════ */
+    /* ══════════════════════════════════════
+       WEEKLY REPORT
+    ══════════════════════════════════════ */
     .week-stat {
-      background: var(--card2);
-      border-radius: 10px;
-      padding: 16px 18px;
+      background: #FAFAFF;
+      border: 1.5px solid rgba(124,58,237,0.08);
+      border-radius: 14px;
+      padding: 14px 18px;
       margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: all 0.2s;
     }
+    .week-stat:hover { background: var(--purple-lt); }
 
     .week-label {
       font-size: 12px;
       color: var(--muted);
-      font-weight: 500;
+      font-weight: 700;
       margin-bottom: 3px;
     }
 
-    .week-delta {
-      font-size: 11px;
-      font-weight: 600;
-    }
-
+    .week-delta { font-size: 11px; font-weight: 800; }
     .delta-up   { color: var(--red); }
-    .delta-down { color: #50C850; }
+    .delta-down { color: var(--green); }
     .delta-same { color: var(--muted); }
 
-    .week-val {
-      font-size: 26px;
+    .week-val { font-size: 28px; font-weight: 900; }
+
+    /* ── URL BUTTONS ── */
+    .url-btn-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .url-btn {
+      display: block;
+      width: 100%;
+      padding: 9px 14px;
+      background: var(--purple-lt);
+      border: 1.5px solid rgba(124,58,237,0.14);
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 11.5px;
       font-weight: 800;
-    }
-
-    .url-list { margin-top: 20px; }
-    .url-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 12px;
-    }
-    .url-item:last-child { border-bottom: none; }
-
-    .url-rank {
-      width: 20px;
-      height: 20px;
-      border-radius: 5px;
-      background: var(--card2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-
-    .url-text {
-      flex: 1;
+      color: var(--purple);
+      text-align: left;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.18s cubic-bezier(0.34,1.3,0.64,1);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: var(--text);
+    }
+    .url-btn:hover {
+      background: var(--purple);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(124,58,237,0.25);
     }
 
-    .url-count {
-      font-weight: 700;
-      color: var(--yellow);
-      flex-shrink: 0;
-    }
-
-    /* ═══════════════ SEVERITY LEGEND ═══════════════ */
+    /* ── SEV LEGEND ── */
     .sev-legend {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 9px;
       margin-top: 16px;
     }
 
@@ -450,29 +572,31 @@
       align-items: center;
       justify-content: space-between;
       font-size: 13px;
+      font-weight: 700;
     }
 
     .sev-dot {
       width: 10px; height: 10px;
-      border-radius: 3px;
+      border-radius: 50%;
       margin-right: 8px;
       display: inline-block;
     }
 
-    /* ═══════════════ EMPTY STATE ═══════════════ */
+    /* ── EMPTY STATE ── */
     .empty {
       text-align: center;
-      padding: 60px 0;
+      padding: 50px 0;
       color: var(--muted);
     }
-    .empty-icon { font-size: 48px; margin-bottom: 12px; }
-    .empty p { font-size: 14px; }
+    .empty-icon { font-size: 52px; margin-bottom: 12px; }
+    .empty p { font-size: 14px; font-weight: 700; line-height: 1.6; }
 
-    /* ═══════════════ TOAST ═══════════════ */
+    /* ══════════════════════════════════════
+       TOAST
+    ══════════════════════════════════════ */
     #toasts {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      bottom: 28px; right: 28px;
       z-index: 999;
       display: flex;
       flex-direction: column;
@@ -483,49 +607,52 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 12px 18px;
-      border-radius: 10px;
+      padding: 13px 18px;
+      border-radius: 14px;
       font-size: 13px;
-      font-weight: 600;
-      max-width: 340px;
-      animation: toastin 0.3s ease;
-      border: 1px solid;
+      font-weight: 700;
+      max-width: 360px;
+      animation: toastin 0.35s cubic-bezier(0.34,1.2,0.64,1);
+      border: 1.5px solid;
+      backdrop-filter: blur(10px);
     }
 
     @keyframes toastin {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateX(24px) scale(0.95); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
     }
 
-    .toast.high   { background: #1f0505; border-color: rgba(255,34,34,0.4);  color: var(--red); }
-    .toast.medium { background: #1f0f00; border-color: rgba(255,122,0,0.4);  color: #FF7A00; }
-    .toast.low    { background: #051505; border-color: rgba(80,200,80,0.3);  color: #50C850; }
+    .toast.high   { background: rgba(254,242,242,0.95); border-color: rgba(239,68,68,0.25);  color: #991B1B; }
+    .toast.medium { background: rgba(255,247,237,0.95); border-color: rgba(249,115,22,0.25); color: #9A3412; }
+    .toast.low    { background: rgba(209,250,229,0.95); border-color: rgba(16,185,129,0.25); color: #065F46; }
 
-    @media (max-width: 1024px) {
+    /* ══════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════ */
+    @media (max-width: 1080px) {
       .stat-row    { grid-template-columns: repeat(2, 1fr); }
       .charts-row  { grid-template-columns: 1fr; }
       .bottom-row  { grid-template-columns: 1fr; }
     }
-
     @media (max-width: 600px) {
-      .stat-row { grid-template-columns: 1fr 1fr; }
-      .header   { padding: 0 16px; }
-      .container{ padding: 20px 14px; }
+      .stat-row    { grid-template-columns: 1fr 1fr; }
+      .header      { padding: 0 18px; }
+      .container   { padding: 18px 14px; }
     }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- ═══ HEADER ═══ -->
 <header class="header">
   <div class="logo-row">
     {% if logo_b64 %}
     <img src="data:image/png;base64,{{ logo_b64 }}" alt="CleanBrowse" />
+    {% else %}
+    <div class="logo-box">🛡️</div>
     {% endif %}
     <div>
-      <div class="brand-name">
-        <span class="brand-clean">CLEAN</span><span class="brand-browse">BROWSE</span>
-      </div>
+      <div class="brand-name">Clean<em>Browse</em></div>
       <div class="brand-sub">Parent Control Center</div>
     </div>
   </div>
@@ -539,80 +666,93 @@
   </div>
 </header>
 
-<!-- MAIN -->
+<!-- ═══ MAIN ═══ -->
 <div class="container">
 
   <!-- THREAT BAR -->
   {% set score = data.danger_score %}
   {% if score <= 20 %}
-    {% set tc = '#50C850' %}{% set tl = '✅ All Clear' %}
+    {% set tc = '#10B981' %}{% set tc2 = '#34D399' %}{% set tl = '✅ All Clear' %}
   {% elif score <= 50 %}
-    {% set tc = '#FFD600' %}{% set tl = '⚠️ Low Risk' %}
+    {% set tc = '#F59E0B' %}{% set tc2 = '#FCD34D' %}{% set tl = '⚠️ Low Risk' %}
   {% elif score <= 75 %}
-    {% set tc = '#FF7A00' %}{% set tl = '🔶 Moderate Risk' %}
+    {% set tc = '#F97316' %}{% set tc2 = '#FB923C' %}{% set tl = '🔶 Moderate Risk' %}
   {% else %}
-    {% set tc = '#FF2222' %}{% set tl = '🔴 High Risk' %}
+    {% set tc = '#EF4444' %}{% set tc2 = '#F97316' %}{% set tl = '🔴 High Risk' %}
   {% endif %}
 
   <div class="threat-bar">
-    <div class="threat-label">📡 Threat Level</div>
+    <span class="threat-icon">📡</span>
+    <div class="threat-label">Threat Level</div>
     <div class="threat-track">
-      <div class="threat-fill" style="width: {{ score }}%; background: linear-gradient(90deg, {{ tc }}88, {{ tc }});"></div>
+      <div class="threat-fill" style="width: {{ score }}%; background: linear-gradient(90deg, {{ tc }}, {{ tc2 }});"></div>
     </div>
     <div class="threat-status" style="color: {{ tc }}">{{ tl }}</div>
   </div>
 
-  <!-- STATS -->
+  <!-- STAT CARDS -->
   <div class="stat-row">
     <div class="stat-card red-card">
-      <div class="stat-icon">🚨</div>
+      <div class="stat-icon-bg ic-red">🚨</div>
       <div class="stat-title">Total Incidents</div>
-      <div class="stat-number red">{{ data.total_incidents }}</div>
+      <div class="stat-number num-red">{{ data.total_incidents }}</div>
       <div class="stat-sub">All time recorded</div>
     </div>
     <div class="stat-card yel-card">
-      <div class="stat-icon">🔒</div>
+      <div class="stat-icon-bg ic-yellow">🔒</div>
       <div class="stat-title">Blocked Today</div>
-      <div class="stat-number yellow">{{ data.today_count }}</div>
+      <div class="stat-number num-yellow">{{ data.today_count }}</div>
       <div class="stat-sub">Last 24 hours</div>
     </div>
-    <div class="stat-card ora-card">
-      <div class="stat-icon">🔍</div>
+    <div class="stat-card teal-card">
+      <div class="stat-icon-bg ic-teal">🔍</div>
       <div class="stat-title">Unsafe Searches</div>
-      <div class="stat-number orange">{{ data.summary.get('unsafe_search', 0) }}</div>
+      <div class="stat-number num-teal">{{ data.summary.get('unsafe_search', 0) }}</div>
       <div class="stat-sub">Search intercepted</div>
     </div>
-    <div class="stat-card gry-card">
-      <div class="stat-icon">⛔</div>
+    <div class="stat-card {% if data.summary.get('bypass_attempt', 0) > 0 %}red-card{% else %}green-card{% endif %}">
+      <div class="stat-icon-bg {% if data.summary.get('bypass_attempt', 0) > 0 %}ic-red{% else %}ic-green{% endif %}">⛔</div>
       <div class="stat-title">Bypass Attempts</div>
-      <div class="stat-number {% if data.summary.get('bypass_attempt', 0) > 0 %}red{% else %}white{% endif %}">
+      <div class="stat-number {% if data.summary.get('bypass_attempt', 0) > 0 %}num-red{% else %}num-green{% endif %}">
         {{ data.summary.get('bypass_attempt', 0) }}
       </div>
-      <div class="stat-sub">{% if data.summary.get('bypass_attempt', 0) > 0 %}Action needed!{% else %}All secure{% endif %}</div>
+      <div class="stat-sub">{% if data.summary.get('bypass_attempt', 0) > 0 %}⚡ Action needed!{% else %}🌟 All secure{% endif %}</div>
     </div>
   </div>
 
   <!-- CHARTS: WEEKLY + SEVERITY -->
   <div class="charts-row">
     <div class="card">
-      <div class="card-title">Weekly Incident Frequency — Last 7 Days</div>
+      <div class="card-title">
+        <div class="card-title-dot"></div>
+        Weekly Incident Frequency — Last 7 Days
+      </div>
       <canvas id="weekChart" height="130"></canvas>
     </div>
-    <div class="card">
-      <div class="card-title">Severity Breakdown — All Time</div>
-      <canvas id="sevChart" height="160"></canvas>
+    <div class="card" style="
+      background: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(237,233,254,0.45) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(124,58,237,0.16);
+      box-shadow: 0 8px 32px rgba(124,58,237,0.10), inset 0 1px 0 rgba(255,255,255,0.8);
+    ">
+      <div class="card-title">
+        <div class="card-title-dot"></div>
+        Severity Breakdown — All Time
+      </div>
+      <canvas id="sevChart" height="120"></canvas>
       <div class="sev-legend">
         <div class="sev-row">
-          <div><span class="sev-dot" style="background:#FF2222"></span>High Severity</div>
-          <strong style="color:#FF2222">{{ data.severity.get('high', 0) }}</strong>
+          <div><span class="sev-dot" style="background: #FF6B9D"></span>High Severity</div>
+          <strong style="color: #FF6B9D">{{ data.severity.get('high', 0) }}</strong>
         </div>
         <div class="sev-row">
-          <div><span class="sev-dot" style="background:#FF7A00"></span>Medium Severity</div>
-          <strong style="color:#FF7A00">{{ data.severity.get('medium', 0) }}</strong>
+          <div><span class="sev-dot" style="background: #C084FC"></span>Medium Severity</div>
+          <strong style="color: #C084FC">{{ data.severity.get('medium', 0) }}</strong>
         </div>
         <div class="sev-row">
-          <div><span class="sev-dot" style="background:#50C850"></span>Low Severity</div>
-          <strong style="color:#50C850">{{ data.severity.get('low', 0) }}</strong>
+          <div><span class="sev-dot" style="background: #38BDF8"></span>Low Severity</div>
+          <strong style="color: #38BDF8">{{ data.severity.get('low', 0) }}</strong>
         </div>
       </div>
     </div>
@@ -620,11 +760,14 @@
 
   <!-- HOURLY -->
   <div class="hourly-wrap card">
-    <div class="card-title">Hourly Activity — Today (24h breakdown)</div>
+    <div class="card-title">
+      <div class="card-title-dot"></div>
+      Hourly Activity — Today (24h breakdown)
+    </div>
     <canvas id="hourChart" height="80"></canvas>
   </div>
 
-  <div style="height: 24px;"></div>
+  <div style="height: 22px;"></div>
 
   <!-- BOTTOM: LIVE FEED + WEEKLY REPORT -->
   <div class="bottom-row">
@@ -632,12 +775,13 @@
     <!-- LIVE FEED -->
     <div class="card">
       <div class="card-title" style="justify-content: space-between; display: flex; align-items: center;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div style="width:3px; height:14px; background:var(--red); border-radius:2px;"></div>
+        <div style="display:flex; align-items:center; gap:9px;">
+          <div class="card-title-dot"></div>
           Live Alert Feed
         </div>
-        <div class="live-badge" style="font-size: 11px;">
-          <div class="live-dot"></div> Auto-updates
+        <div class="live-badge" style="font-size: 10.5px; background: var(--purple-lt); border-color: rgba(124,58,237,0.18); color: var(--purple);">
+          <div class="live-dot" style="background: var(--purple); box-shadow: none;"></div>
+          Auto-updates
         </div>
       </div>
       <div class="feed-list" id="feedList">
@@ -650,18 +794,23 @@
             <div class="feed-body">
               <div class="feed-type">{{ a.type.replace('_', ' ').title() }}</div>
               <div class="feed-url" title="{{ a.url }}">{{ a.url if a.url else '—' }}</div>
-              {% if a.snippet %}<div class="feed-snippet">{{ a.snippet[:90] }}</div>{% endif %}
+              {% if a.snippet %}
+              <div class="feed-snippet-chip">
+                <span class="chip-label">🔍 Flagged</span>
+                {{ a.snippet[:80] }}
+              </div>
+              {% endif %}
             </div>
             <div class="feed-right">
-              <div class="feed-time">{{ a.time[11:19] if a.time and a.time|length > 10 else (a.time or '—') }}</div>
+              <div class="feed-time" data-utc="{{ a.time }}">{{ a.time[11:19] if a.time and a.time|length > 10 else (a.time or '—') }}</div>
               <span class="sev-badge {{ a.severity }}">{{ a.severity }}</span>
             </div>
           </div>
           {% endfor %}
         {% else %}
           <div class="empty">
-            <div class="empty-icon">🛡️</div>
-            <p>No incidents recorded yet.<br>Your child is browsing safely!</p>
+            <div class="empty-icon">🌈</div>
+            <p>No incidents recorded yet.<br>Your child is browsing safely! 🎉</p>
           </div>
         {% endif %}
       </div>
@@ -669,7 +818,10 @@
 
     <!-- WEEKLY REPORT -->
     <div class="card">
-      <div class="card-title">Weekly Report</div>
+      <div class="card-title">
+        <div class="card-title-dot"></div>
+        Weekly Report
+      </div>
 
       {% set delta = data.this_week - data.last_week %}
       <div class="week-stat">
@@ -681,7 +833,7 @@
             {% else %}→ Same as last week{% endif %}
           </div>
         </div>
-        <div class="week-val" style="color: var(--yellow)">{{ data.this_week }}</div>
+        <div class="week-val" style="color: var(--purple)">{{ data.this_week }}</div>
       </div>
 
       <div class="week-stat">
@@ -696,27 +848,24 @@
 
       <div class="week-stat">
         <div class="week-label">Blocked Sites (all time)</div>
-        <div class="week-val" style="color: #FF7A00">{{ data.summary.get('blocked_site', 0) }}</div>
+        <div class="week-val" style="color: var(--orange)">{{ data.summary.get('blocked_site', 0) }}</div>
       </div>
 
-      <div class="url-list">
-        <div class="card-title" style="margin-bottom: 12px; font-size: 12px;">Top Flagged URLs — 7 Days</div>
+      <div class="url-btn-list">
+        <div class="url-list-title" style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">🔗 Recent Blocked Sites</div>
         {% if data.top_urls %}
           {% for item in data.top_urls %}
-          <div class="url-item">
-            <div class="url-rank">{{ loop.index }}</div>
-            <div class="url-text" title="{{ item.url }}">{{ item.url }}</div>
-            <div class="url-count">×{{ item.count }}</div>
-          </div>
+          <a class="url-btn" href="{{ item.url }}" target="_blank" title="{{ item.url }}">
+            🌐 {{ item.url | truncate(40, True, '…') }}
+          </a>
           {% endfor %}
         {% else %}
-          <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0;">Clean week — no flagged URLs!</div>
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:14px 0;font-weight:700;">🌟 No blocked sites this week!</div>
         {% endif %}
       </div>
     </div>
 
   </div>
-
 </div><!-- /container -->
 
 <!-- TOASTS -->
@@ -724,16 +873,17 @@
 
 <!-- SCRIPTS -->
 <script>
-/* ── DATA FROM FLASK (real DB data, no sample values) ── */
+/* ── DATA FROM FLASK ── */
 const trendsData = {{ data.trends  | tojson }};
 const hourlyData = {{ data.hourly  | tojson }};
 const sevData    = {{ data.severity | tojson }};
 const recentData = {{ data.recent  | tojson }};
 
 /* ── CHART.JS DEFAULTS ── */
-Chart.defaults.color = '#777';
-Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#9CA3AF';
+Chart.defaults.font.family = "'Nunito', sans-serif";
 Chart.defaults.font.size   = 11;
+Chart.defaults.font.weight = '700';
 
 /* ── WEEKLY LINE CHART ── */
 (function() {
@@ -741,8 +891,8 @@ Chart.defaults.font.size   = 11;
   if (!ctx) return;
   const c = ctx.getContext('2d');
   const grad = c.createLinearGradient(0, 0, 0, 200);
-  grad.addColorStop(0, 'rgba(255,34,34,0.30)');
-  grad.addColorStop(1, 'rgba(255,34,34,0.01)');
+  grad.addColorStop(0, 'rgba(124,58,237,0.25)');
+  grad.addColorStop(1, 'rgba(124,58,237,0.01)');
 
   new Chart(ctx, {
     type: 'line',
@@ -751,39 +901,42 @@ Chart.defaults.font.size   = 11;
       datasets: [{
         label: 'Incidents',
         data: trendsData.map(d => d.count),
-        borderColor: '#FF2222',
+        borderColor: '#7C3AED',
         backgroundColor: grad,
-        borderWidth: 2,
-        tension: 0.4,
+        borderWidth: 2.5,
+        tension: 0.45,
         fill: true,
-        pointBackgroundColor: '#FF2222',
-        pointBorderColor: '#111',
-        pointBorderWidth: 2,
+        pointBackgroundColor: '#7C3AED',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2.5,
         pointRadius: 5,
-        pointHoverRadius: 7,
+        pointHoverRadius: 8,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      animation: { duration: 800 },
+      animation: { duration: 900, easing: 'easeOutQuart' },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1A1A1A',
-          titleColor: '#fff',
-          bodyColor: '#FF2222',
-          borderColor: '#333',
-          borderWidth: 1,
-          padding: 10,
-          cornerRadius: 8,
+          backgroundColor: '#FFFFFF',
+          titleColor: '#1E1B4B',
+          bodyColor: '#7C3AED',
+          borderColor: 'rgba(124,58,237,0.15)',
+          borderWidth: 1.5,
+          padding: 12,
+          cornerRadius: 12,
+          titleFont: { weight: '800' },
+          bodyFont: { weight: '700' },
+          boxShadow: '0 4px 24px rgba(124,58,237,0.12)',
         }
       },
       scales: {
         y: {
           beginAtZero: true,
-          grid: { color: '#222' },
+          grid: { color: 'rgba(124,58,237,0.06)' },
           ticks: { stepSize: 1 }
         },
         x: { grid: { display: false } }
@@ -806,25 +959,30 @@ Chart.defaults.font.size   = 11;
       labels: ['High', 'Medium', 'Low'],
       datasets: [{
         data: [high, medium, low],
-        backgroundColor: ['#FF2222', '#FF7A00', '#50C850'],
-        borderColor: '#1A1A1A',
-        borderWidth: 3,
-        hoverOffset: 6,
+        backgroundColor: ['#FF6B9D', '#C084FC', '#38BDF8'],
+        borderColor: 'rgba(255,255,255,0.0)',
+        borderWidth: 0,
+        hoverOffset: 10,
+        borderRadius: 6,
+        spacing: 3,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      cutout: '65%',
+      cutout: '68%',
+      animation: { duration: 900, easing: 'easeOutQuart' },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1A1A1A',
-          titleColor: '#fff',
-          borderColor: '#333',
-          borderWidth: 1,
-          padding: 10,
-          cornerRadius: 8,
+          backgroundColor: '#FFFFFF',
+          titleColor: '#1E1B4B',
+          borderColor: 'rgba(124,58,237,0.15)',
+          borderWidth: 1.5,
+          padding: 12,
+          cornerRadius: 12,
+          titleFont: { weight: '800' },
+          bodyFont: { weight: '700' },
         }
       }
     }
@@ -843,34 +1001,68 @@ Chart.defaults.font.size   = 11;
       datasets: [{
         label: 'Incidents',
         data: hourlyData.map(d => d.count),
-        backgroundColor: hourlyData.map(d => d.count > 0 ? '#FFD600' : '#222'),
-        borderRadius: 4,
+        backgroundColor: hourlyData.map(d =>
+          d.count > 0 ? 'rgba(124,58,237,0.75)' : 'rgba(124,58,237,0.08)'
+        ),
+        hoverBackgroundColor: '#7C3AED',
+        borderRadius: 6,
         borderSkipped: false,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      animation: { duration: 800 },
+      animation: { duration: 900, easing: 'easeOutQuart' },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1A1A1A',
-          titleColor: '#fff',
-          bodyColor: '#FFD600',
-          borderColor: '#333',
-          borderWidth: 1,
-          padding: 10,
-          cornerRadius: 8,
+          backgroundColor: '#FFFFFF',
+          titleColor: '#1E1B4B',
+          bodyColor: '#7C3AED',
+          borderColor: 'rgba(124,58,237,0.15)',
+          borderWidth: 1.5,
+          padding: 12,
+          cornerRadius: 12,
+          titleFont: { weight: '800' },
+          bodyFont: { weight: '700' },
         }
       },
       scales: {
-        y: { beginAtZero: true, grid: { color: '#222' }, ticks: { stepSize: 1 } },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(124,58,237,0.06)' },
+          ticks: { stepSize: 1 }
+        },
         x: { grid: { display: false } }
       }
     }
   });
 })();
+
+/* ── UTC → LOCAL TIME CONVERTER ───────────────────────────────────────────
+   SQLite stores timestamps as UTC (datetime('now')).
+   This converts them to the user's local timezone using the browser's
+   built-in Intl API — no hardcoded offset needed.
+───────────────────────────────────────────────────────────────────────────── */
+function formatLocalTime(utcStr) {
+  if (!utcStr) return '—';
+  // SQLite format: "YYYY-MM-DD HH:MM:SS"  — append Z to tell JS it's UTC
+  const date = new Date(utcStr.trim().replace(' ', 'T') + 'Z');
+  if (isNaN(date.getTime())) return utcStr.slice(11, 19) || '—';
+  return date.toLocaleTimeString([], {
+    hour:   '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
+// Backfill server-rendered feed times on page load
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.feed-time[data-utc]').forEach(el => {
+    el.textContent = formatLocalTime(el.dataset.utc);
+  });
+});
 
 /* ── LAST REFRESH CLOCK ── */
 function updateClock() {
@@ -897,7 +1089,6 @@ function showToast(alert) {
 
 function prependFeedItem(a) {
   const list = document.getElementById('feedList');
-  // Remove empty state if present
   const empty = list.querySelector('.empty');
   if (empty) empty.remove();
 
@@ -905,16 +1096,18 @@ function prependFeedItem(a) {
   div.className = 'feed-item';
   div.dataset.id = a.id;
   const icon = a.severity === 'high' ? '🔴' : a.severity === 'medium' ? '🟠' : '🟢';
-  const time = (a.time || '').slice(11, 19);
+  const snippetHtml = a.snippet
+    ? `<div class="feed-snippet-chip"><span class="chip-label">🔍 Flagged</span>${a.snippet.slice(0, 80)}</div>`
+    : '';
   div.innerHTML = `
     <div class="feed-sev-icon sev-${a.severity}">${icon}</div>
     <div class="feed-body">
       <div class="feed-type">${(a.type||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
       <div class="feed-url">${a.url || '—'}</div>
-      ${a.snippet ? `<div class="feed-snippet">${a.snippet.slice(0,90)}</div>` : ''}
+      ${snippetHtml}
     </div>
     <div class="feed-right">
-      <div class="feed-time">${time}</div>
+      <div class="feed-time">${formatLocalTime(a.time)}</div>
       <span class="sev-badge ${a.severity}">${a.severity}</span>
     </div>`;
   list.prepend(div);
